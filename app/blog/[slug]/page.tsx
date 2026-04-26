@@ -15,6 +15,19 @@ interface BlogPostPageProps {
 
 export const dynamic = 'force-dynamic';
 
+function getBlogKeywords(title: string): string[] {
+  const titleKeywords = title
+    .split(/[\s:：,，、。！？?《》“”"()（）]+/)
+    .map((keyword) => keyword.trim())
+    .filter((keyword) => keyword.length > 1);
+
+  return Array.from(new Set([...titleKeywords, 'AI', '人工智能', 'AI 工具', 'AI 资讯']));
+}
+
+function escapeJsonLd(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await getBlogPost(slug);
@@ -32,6 +45,21 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   return {
     title: post.title,
     description: post.summary,
+    keywords: getBlogKeywords(post.title),
+    authors: [{ name: 'Intellect & Insight' }],
+    creator: 'Intellect & Insight',
+    publisher: 'Intellect & Insight',
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+        'max-video-preview': -1,
+      },
+    },
     alternates: {
       canonical: canonicalUrl,
     },
@@ -63,6 +91,31 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const post = await getBlogPost(slug);
 
   if (!post) notFound();
+
+  const canonicalPath = `/blog/${encodeURIComponent(post.slug)}`;
+  const canonicalUrl = getAbsoluteUrl(canonicalPath);
+  const imageUrl = getAbsoluteUrl(post.image);
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.summary,
+    image: [imageUrl],
+    datePublished: post.uploadedAt,
+    dateModified: post.uploadedAt,
+    author: {
+      '@type': 'Organization',
+      name: 'Intellect & Insight',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Intellect & Insight',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+  };
 
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col">
@@ -99,6 +152,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </ReactMarkdown>
         </article>
       </main>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: escapeJsonLd(articleJsonLd) }}
+      />
 
       <SiteFooter variant="details" />
     </div>
