@@ -11,7 +11,13 @@ export interface BlogPost {
   summary: string;
   content: string;
   image: string;
+  uploadedAt: string;
   readTime: string;
+}
+
+interface BlogMarkdownBlob {
+  pathname: string;
+  uploadedAt: Date;
 }
 
 function stripMarkdown(input: string): string {
@@ -70,7 +76,7 @@ function extractSummaryBlock(lines: string[]): { summary: string | null; content
   };
 }
 
-function parsePost(slug: string, markdown: string): BlogPost {
+function parsePost(slug: string, markdown: string, uploadedAt: Date): BlogPost {
   const lines = markdown.split(/\r?\n/);
   const titleLineIndex = lines.findIndex((line) => line.trim().startsWith('# '));
   const title =
@@ -91,6 +97,7 @@ function parsePost(slug: string, markdown: string): BlogPost {
     summary: truncate(stripMarkdown(summary ?? firstParagraph ?? content), 180),
     content,
     image: extractFirstImage(content) ?? BLOG_IMAGE,
+    uploadedAt: uploadedAt.toISOString(),
     readTime: estimateReadTime(markdown),
   };
 }
@@ -105,19 +112,42 @@ async function readBlobText(pathname: string): Promise<string | null> {
   }
 }
 
+async function listBlogMarkdownBlobs(): Promise<BlogMarkdownBlob[]> {
+  const markdownBlobs: BlogMarkdownBlob[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const result = await list({
+      prefix: BLOG_PREFIX,
+      limit: 1000,
+      cursor,
+    });
+
+    markdownBlobs.push(
+      ...result.blobs
+        .filter((blob) => blob.pathname.endsWith('.md'))
+        .map((blob) => ({
+          pathname: blob.pathname,
+          uploadedAt: blob.uploadedAt,
+        })),
+    );
+
+    cursor = result.cursor;
+  } while (cursor);
+
+  return markdownBlobs.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+}
+
 export async function getBlogPosts(): Promise<BlogPost[]> {
   try {
-    const { blobs } = await list({ prefix: BLOG_PREFIX, limit: 1000 });
-    const markdownBlobs = blobs
-      .filter((blob) => blob.pathname.endsWith('.md'))
-      .sort((a, b) => a.pathname.localeCompare(b.pathname, undefined, { numeric: true }));
+    const markdownBlobs = await listBlogMarkdownBlobs();
 
     const posts = await Promise.all(
       markdownBlobs.map(async (blob) => {
         const slug = blob.pathname.replace(BLOG_PREFIX, '').replace(/\.md$/, '');
         const markdown = await readBlobText(blob.pathname);
         if (!markdown) return null;
-        return parsePost(slug, markdown);
+        return parsePost(slug, markdown, blob.uploadedAt);
       }),
     );
 
@@ -141,7 +171,7 @@ export async function getBlogInsights(): Promise<CategoryInsight[]> {
     summary: post.summary,
     link: `/blog/${post.slug}`,
     source: 'Blog',
-    publishedAt: '',
+    publishedAt: post.uploadedAt,
     image: post.image,
     readTime: post.readTime,
   }));
