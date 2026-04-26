@@ -1,0 +1,61 @@
+import { notFound } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import SiteFooter from '@/components/SiteFooter';
+import SiteHeader from '@/components/SiteHeader';
+import { getBlogPost } from '@/lib/blog';
+
+interface BlogPostPageProps {
+  params: Promise<{
+    slug: string;
+  }>;
+}
+
+export const dynamic = 'force-dynamic';
+
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
+
+  if (!post) notFound();
+
+  return (
+    <div className="bg-background text-on-background min-h-screen flex flex-col">
+      <SiteHeader variant="details" />
+
+      <main className="flex-grow w-full pt-8 pb-xxl">
+        <article className="max-w-[720px] mx-auto px-4 md:px-0 markdown-content">
+          <div className="mb-12">
+            <span className="inline-block bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant mb-4">
+              BLOG
+            </span>
+            <h1>{post.title}</h1>
+            <p className="font-body-lg text-body-lg text-on-surface-variant italic mb-0">
+              {post.readTime}
+            </p>
+          </div>
+
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              img: ({ src = '', alt = '' }) => {
+                const imageSrc = src.startsWith('./') ? `/blog-assets/${src.slice(2)}` : src;
+                return (
+                  <img
+                    src={imageSrc}
+                    alt={alt}
+                    className="my-8 w-full rounded-xl border border-outline-variant object-cover"
+                  />
+                );
+              },
+            }}
+          >
+            {post.content}
+          </ReactMarkdown>
+        </article>
+      </main>
+
+      <SiteFooter variant="details" />
+    </div>
+  );
+}

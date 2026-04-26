@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { Category, HomepageInsights } from '@/lib/rss';
+import type { Category, CategoryInsight, HomepageInsights } from '@/lib/rss';
 
 type FilterKey = 'All Insights' | Category;
 
@@ -33,6 +33,14 @@ function ArrowIcon() {
       />
     </svg>
   );
+}
+
+function isInsight(item: CategoryInsight | undefined): item is CategoryInsight {
+  return item !== undefined;
+}
+
+function getLinkProps(link: string) {
+  return link.startsWith('/') ? {} : { target: '_blank', rel: 'noreferrer' };
 }
 
 export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedProps) {
@@ -101,7 +109,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
             <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter">
               {strategy && (
                 <article className="col-span-1 md:col-span-8 group cursor-pointer">
-                  <a href={strategy.link} target="_blank" rel="noreferrer">
+                  <a href={strategy.link} {...getLinkProps(strategy.link)}>
                     <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-[480px] flex flex-col relative transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
                       <div className="h-2/3 w-full bg-surface-variant overflow-hidden">
                         <img alt={strategy.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" src={strategy.image} />
@@ -123,7 +131,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
 
               {research && (
                 <article className="col-span-1 md:col-span-4 group cursor-pointer">
-                  <a href={research.link} target="_blank" rel="noreferrer">
+                  <a href={research.link} {...getLinkProps(research.link)}>
                     <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-[480px] flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
                       <div className="h-1/2 w-full bg-surface-variant overflow-hidden">
                         <img alt={research.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" src={research.image} />
@@ -148,9 +156,9 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
                 </article>
               )}
 
-              {[policy, trends, ethics].filter(Boolean).map((item) => (
-                <article key={item.category} className="col-span-1 md:col-span-4 group cursor-pointer mt-lg">
-                  <a href={item.link} target="_blank" rel="noreferrer">
+              {[policy, trends, ethics, ...insights.Blog].filter(isInsight).map((item) => (
+                <article key={`${item.link}-${item.title}`} className="col-span-1 md:col-span-4 group cursor-pointer mt-lg">
+                  <a href={item.link} {...getLinkProps(item.link)}>
                     <div className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-lg h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5 ${item.category === 'Ethics & Governance' ? 'bg-gradient-to-br from-surface-container-lowest to-surface-container-low' : ''}`}>
                       <div className="flex items-center gap-sm mb-md">
                         <span className="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">{item.category}</span>
@@ -170,7 +178,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
               {filteredList.map((item) => (
                 <article key={`${item.link}-${item.title}`} className="group cursor-pointer">
-                  <a href={item.link} target="_blank" rel="noreferrer">
+                  <a href={item.link} {...getLinkProps(item.link)}>
                     <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
                       <div className="h-52 w-full bg-surface-variant overflow-hidden">
                         <img

@@ -7,7 +7,10 @@ export type Category =
   | 'Tech Trends'
   | 'Policy & Regulation'
   | 'Ethics & Governance'
-  | 'Research & Data';
+  | 'Research & Data'
+  | 'Blog';
+
+type RssCategory = Exclude<Category, 'Blog'>;
 
 export interface FeedSource {
   name: string;
@@ -32,7 +35,7 @@ type ExtendedItem = Parser.Item & {
 
 export type HomepageInsights = Record<Category, CategoryInsight[]>;
 
-const EDGE_CONFIG_KEYS: Record<Category, string> = {
+const EDGE_CONFIG_KEYS: Record<RssCategory, string> = {
   'AI Strategy': 'AI-Strategy',
   'Tech Trends': 'Tech-Trends',
   'Policy & Regulation': 'Policy-Regulation',
@@ -48,7 +51,7 @@ const parser = new Parser({
   },
 });
 
-const CATEGORY_ORDER: Category[] = [
+const CATEGORY_ORDER: RssCategory[] = [
   'AI Strategy',
   'Tech Trends',
   'Policy & Regulation',
@@ -67,10 +70,12 @@ const DEFAULT_IMAGES: Record<Category, string> = {
     'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=1600&q=80',
   'Research & Data':
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCCtre3nBxfKjyzjtISH7TUTLf00qAnoiQYNIhX5dU-Q-q_hoMFHc4_irOm2iFzKMjy_yYcWPTKIkiQJoi9EUNw9zJrvWA8jNvqdGwOzPYIo7PTLMOrsAfFf9f9TdmuNYR3THRw8bUEveMBxFEdFZH9AU6b58ebExbmAR_F8sEP7lgkTZZ3PrBIo0zjLs2cVHwtb5lXdyot6ajcudAiR8CBDebbXCSJB02WHPQG9IuBSXPs85DWaysx9Ps2tBOagZXQqxRMa2x3lFI',
+  Blog:
+    'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1600&q=80',
 };
 
 function isCategory(value: string): value is Category {
-  return CATEGORY_ORDER.includes(value as Category);
+  return [...CATEGORY_ORDER, 'Blog'].includes(value as Category);
 }
 
 function sanitizeFeedSources(value: unknown): FeedSource[] | null {
@@ -85,8 +90,8 @@ function sanitizeFeedSources(value: unknown): FeedSource[] | null {
   );
 }
 
-function mapDashedSourceConfig(parsed: Record<string, unknown>): Record<Category, FeedSource[]> | null {
-  const mapped: Partial<Record<Category, FeedSource[]>> = {};
+function mapDashedSourceConfig(parsed: Record<string, unknown>): Record<RssCategory, FeedSource[]> | null {
+  const mapped: Partial<Record<RssCategory, FeedSource[]>> = {};
 
   for (const category of CATEGORY_ORDER) {
     const cleaned = sanitizeFeedSources(parsed[EDGE_CONFIG_KEYS[category]]);
@@ -94,11 +99,11 @@ function mapDashedSourceConfig(parsed: Record<string, unknown>): Record<Category
     mapped[category] = cleaned;
   }
 
-  return mapped as Record<Category, FeedSource[]>;
+  return mapped as Record<RssCategory, FeedSource[]>;
 }
 
-function mapCategorySourceConfig(parsed: Record<string, unknown>): Record<Category, FeedSource[]> | null {
-  const mapped: Partial<Record<Category, FeedSource[]>> = {};
+function mapCategorySourceConfig(parsed: Record<string, unknown>): Record<RssCategory, FeedSource[]> | null {
+  const mapped: Partial<Record<RssCategory, FeedSource[]>> = {};
 
   for (const category of CATEGORY_ORDER) {
     const cleaned = sanitizeFeedSources(parsed[category]);
@@ -106,23 +111,23 @@ function mapCategorySourceConfig(parsed: Record<string, unknown>): Record<Catego
     mapped[category] = cleaned;
   }
 
-  return mapped as Record<Category, FeedSource[]>;
+  return mapped as Record<RssCategory, FeedSource[]>;
 }
 
-async function getSourcesFromEdgeConfig(): Promise<Record<Category, FeedSource[]> | null> {
+async function getSourcesFromEdgeConfig(): Promise<Record<RssCategory, FeedSource[]> | null> {
   try {
     const entries = await Promise.all(
       CATEGORY_ORDER.map(async (category) => [category, await get(EDGE_CONFIG_KEYS[category])] as const),
     );
 
-    const mapped: Partial<Record<Category, FeedSource[]>> = {};
+    const mapped: Partial<Record<RssCategory, FeedSource[]>> = {};
     for (const [category, value] of entries) {
       const cleaned = sanitizeFeedSources(value);
       if (cleaned === null) return null;
       mapped[category] = cleaned;
     }
 
-    return mapped as Record<Category, FeedSource[]>;
+    return mapped as Record<RssCategory, FeedSource[]>;
   } catch {
     return null;
   }
@@ -170,7 +175,7 @@ function toTimestamp(value?: string): number {
 }
 
 async function fetchCategoryInsights(
-  category: Category,
+  category: RssCategory,
   sources: FeedSource[],
   limit = 8,
 ): Promise<CategoryInsight[]> {
@@ -226,13 +231,14 @@ async function fetchCategoryInsights(
 export async function getHomepageInsights(): Promise<HomepageInsights> {
   const sources = await getSourcesFromEdgeConfig();
   if (!sources) {
-    const emptyInsights = {
+    const emptyInsights: HomepageInsights = {
       'AI Strategy': [],
       'Tech Trends': [],
       'Policy & Regulation': [],
       'Ethics & Governance': [],
       'Research & Data': [],
-    } as HomepageInsights;
+      Blog: [],
+    };
 
     await saveHomepageInsightsToBlob(emptyInsights);
     return emptyInsights;
@@ -244,9 +250,13 @@ export async function getHomepageInsights(): Promise<HomepageInsights> {
     ),
   );
 
-  const insights = Object.fromEntries(results) as HomepageInsights;
+  const rssInsights = Object.fromEntries(results) as Record<RssCategory, CategoryInsight[]>;
+  const insights: HomepageInsights = {
+    ...rssInsights,
+    Blog: [],
+  };
   await saveHomepageInsightsToBlob(insights);
   return insights;
 }
 
-export const categoryOrder = CATEGORY_ORDER;
+export const categoryOrder: Category[] = CATEGORY_ORDER;
