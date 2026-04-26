@@ -158,8 +158,9 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
 }
 
 export async function getBlogPost(slug: string): Promise<BlogPost | null> {
+  const decodedSlug = decodeURIComponent(slug);
   const posts = await getBlogPosts();
-  return posts.find((post) => post.slug === slug) ?? null;
+  return posts.find((post) => post.slug === decodedSlug) ?? null;
 }
 
 export async function getBlogInsights(): Promise<CategoryInsight[]> {
@@ -169,7 +170,7 @@ export async function getBlogInsights(): Promise<CategoryInsight[]> {
     category: 'Blog',
     title: post.title,
     summary: post.summary,
-    link: `/blog/${post.slug}`,
+    link: `/blog/${encodeURIComponent(post.slug)}`,
     source: 'Blog',
     publishedAt: post.uploadedAt,
     image: post.image,
