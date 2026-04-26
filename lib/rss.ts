@@ -1,5 +1,4 @@
 import { get } from '@vercel/edge-config';
-import { saveHomepageInsightsToBlob } from '@/lib/blob';
 import Parser from 'rss-parser';
 
 export type Category =
@@ -240,7 +239,6 @@ export async function getHomepageInsights(): Promise<HomepageInsights> {
       Blog: [],
     };
 
-    await saveHomepageInsightsToBlob(emptyInsights);
     return emptyInsights;
   }
 
@@ -255,7 +253,6 @@ export async function getHomepageInsights(): Promise<HomepageInsights> {
     ...rssInsights,
     Blog: [],
   };
-  await saveHomepageInsightsToBlob(insights);
   return insights;
 }
 
