@@ -1,27 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import type { Category, CategoryInsight, HomepageInsights } from '@/lib/rss';
+import { useEffect, useMemo, useState } from 'react';
+import type { Category, HomepageInsights } from '@/lib/rss';
 
 type FilterKey = 'All Insights' | Category;
 
 interface HomepageFeedProps {
   categoryOrder: Category[];
   insights: HomepageInsights;
-}
-
-function fallbackCard(category: Category): CategoryInsight {
-  return {
-    category,
-    title: `No RSS articles found for ${category}`,
-    summary: 'Please verify source availability for this category.',
-    link: '#',
-    source: 'Fallback',
-    publishedAt: '',
-    image:
-      'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=80',
-    readTime: '4 MIN READ',
-  };
 }
 
 function formatDate(value: string): string {
@@ -52,50 +38,57 @@ function ArrowIcon() {
 export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedProps) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All Insights');
 
-  const tabs = useMemo<FilterKey[]>(() => ['All Insights', ...categoryOrder], [categoryOrder]);
+  const availableCategories = useMemo(
+    () => categoryOrder.filter((category) => insights[category].length > 0),
+    [categoryOrder, insights],
+  );
+  const tabs = useMemo<FilterKey[]>(() => ['All Insights', ...availableCategories], [availableCategories]);
 
-  const strategy = insights['AI Strategy'][0] ?? fallbackCard('AI Strategy');
-  const research = insights['Research & Data'][0] ?? fallbackCard('Research & Data');
-  const policy = insights['Policy & Regulation'][0] ?? fallbackCard('Policy & Regulation');
-  const trends = insights['Tech Trends'][0] ?? fallbackCard('Tech Trends');
-  const ethics = insights['Ethics & Governance'][0] ?? fallbackCard('Ethics & Governance');
+  useEffect(() => {
+    if (activeFilter !== 'All Insights' && !availableCategories.includes(activeFilter)) {
+      setActiveFilter('All Insights');
+    }
+  }, [activeFilter, availableCategories]);
 
-  const filteredList =
-    activeFilter === 'All Insights'
-      ? []
-      : insights[activeFilter].length > 0
-        ? insights[activeFilter]
-        : [fallbackCard(activeFilter)];
+  const strategy = insights['AI Strategy'][0];
+  const research = insights['Research & Data'][0];
+  const policy = insights['Policy & Regulation'][0];
+  const trends = insights['Tech Trends'][0];
+  const ethics = insights['Ethics & Governance'][0];
+
+  const filteredList = activeFilter === 'All Insights' ? [] : insights[activeFilter];
 
   return (
     <>
-      <nav className="bg-slate-50/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 font-sans manrope full-width border-b border-slate-100 dark:border-slate-900 flat no shadows sticky top-[72px] z-40 backdrop-blur-sm">
-        <div
-          className="flex justify-center items-center w-full gap-4 py-3 px-8 overflow-x-auto max-w-7xl mx-auto"
-          role="tablist"
-          aria-label="Insight categories"
-        >
-          {tabs.map((item) => {
-            const isActive = activeFilter === item;
-            return (
-              <button
-                key={item}
-                role="tab"
-                aria-selected={isActive}
-                type="button"
-                onClick={() => setActiveFilter(item)}
-                className={
-                  isActive
-                    ? 'appearance-none border-0 text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-800 rounded-full px-4 py-1 shadow-sm font-nav-link text-nav-link whitespace-nowrap transition-all'
-                    : 'appearance-none border-0 bg-transparent text-slate-500 dark:text-slate-400 px-4 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all font-nav-link text-nav-link whitespace-nowrap'
-                }
-              >
-                {item}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      {availableCategories.length > 0 && (
+        <nav className="bg-slate-50/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 font-sans manrope full-width border-b border-slate-100 dark:border-slate-900 flat no shadows sticky top-[72px] z-40 backdrop-blur-sm">
+          <div
+            className="flex justify-center items-center w-full gap-4 py-3 px-8 overflow-x-auto max-w-7xl mx-auto"
+            role="tablist"
+            aria-label="Insight categories"
+          >
+            {tabs.map((item) => {
+              const isActive = activeFilter === item;
+              return (
+                <button
+                  key={item}
+                  role="tab"
+                  aria-selected={isActive}
+                  type="button"
+                  onClick={() => setActiveFilter(item)}
+                  className={
+                    isActive
+                      ? 'appearance-none border-0 text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-800 rounded-full px-4 py-1 shadow-sm font-nav-link text-nav-link whitespace-nowrap transition-all'
+                      : 'appearance-none border-0 bg-transparent text-slate-500 dark:text-slate-400 px-4 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all font-nav-link text-nav-link whitespace-nowrap'
+                  }
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
 
       <main className="flex-grow">
         <section className="max-w-container-max mx-auto px-gutter py-xxl text-center">
@@ -103,58 +96,62 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
           <p className="font-body-lg text-body-lg text-on-surface-variant max-w-reading-width mx-auto">Distilling complex intelligence into actionable frameworks.</p>
         </section>
 
-        {activeFilter === 'All Insights' ? (
+        {activeFilter === 'All Insights' && availableCategories.length > 0 ? (
           <section className="max-w-container-max mx-auto px-gutter pb-xxl">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter">
-              <article className="col-span-1 md:col-span-8 group cursor-pointer">
-                <a href={strategy.link} target="_blank" rel="noreferrer">
-                  <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-[480px] flex flex-col relative transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
-                    <div className="h-2/3 w-full bg-surface-variant overflow-hidden">
-                      <img alt={strategy.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" src={strategy.image} />
-                    </div>
-                    <div className="p-lg flex-grow flex flex-col justify-between bg-surface-container-lowest z-10">
-                      <div>
-                        <div className="flex items-center gap-sm mb-sm">
-                          <span className="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">{strategy.category}</span>
-                          <span className="text-on-surface-variant font-label-sm text-label-sm">{strategy.readTime}</span>
+              {strategy && (
+                <article className="col-span-1 md:col-span-8 group cursor-pointer">
+                  <a href={strategy.link} target="_blank" rel="noreferrer">
+                    <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-[480px] flex flex-col relative transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
+                      <div className="h-2/3 w-full bg-surface-variant overflow-hidden">
+                        <img alt={strategy.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" src={strategy.image} />
+                      </div>
+                      <div className="p-lg flex-grow flex flex-col justify-between bg-surface-container-lowest z-10">
+                        <div>
+                          <div className="flex items-center gap-sm mb-sm">
+                            <span className="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">{strategy.category}</span>
+                            <span className="text-on-surface-variant font-label-sm text-label-sm">{strategy.readTime}</span>
+                          </div>
+                          <h2 className="font-h2 text-h2 text-on-surface mb-xs group-hover:text-secondary-container transition-colors">{strategy.title}</h2>
+                          <p className="font-body-md text-body-md text-on-surface-variant line-clamp-2">{strategy.summary}</p>
                         </div>
-                        <h2 className="font-h2 text-h2 text-on-surface mb-xs group-hover:text-secondary-container transition-colors">{strategy.title}</h2>
-                        <p className="font-body-md text-body-md text-on-surface-variant line-clamp-2">{strategy.summary}</p>
                       </div>
                     </div>
-                  </div>
-                </a>
-              </article>
+                  </a>
+                </article>
+              )}
 
-              <article className="col-span-1 md:col-span-4 group cursor-pointer">
-                <a href={research.link} target="_blank" rel="noreferrer">
-                  <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-[480px] flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
-                    <div className="h-1/2 w-full bg-surface-variant overflow-hidden">
-                      <img alt={research.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" src={research.image} />
-                    </div>
-                    <div className="p-lg flex-grow flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center gap-sm mb-sm">
-                          <span className="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">{research.category}</span>
+              {research && (
+                <article className="col-span-1 md:col-span-4 group cursor-pointer">
+                  <a href={research.link} target="_blank" rel="noreferrer">
+                    <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-[480px] flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
+                      <div className="h-1/2 w-full bg-surface-variant overflow-hidden">
+                        <img alt={research.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" src={research.image} />
+                      </div>
+                      <div className="p-lg flex-grow flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-sm mb-sm">
+                            <span className="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">{research.category}</span>
+                          </div>
+                          <h3 className="font-h3 text-h3 text-on-surface mb-sm group-hover:text-secondary-container transition-colors">{research.title}</h3>
+                          <p className="font-body-md text-body-md text-on-surface-variant line-clamp-4">{research.summary}</p>
                         </div>
-                        <h3 className="font-h3 text-h3 text-on-surface mb-sm group-hover:text-secondary-container transition-colors">{research.title}</h3>
-                        <p className="font-body-md text-body-md text-on-surface-variant line-clamp-4">{research.summary}</p>
-                      </div>
-                      <div className="mt-4">
-                        <span className="text-secondary-container font-label-sm text-label-sm flex items-center gap-1 group-hover:gap-2 transition-all">
-                          Read Report
-                          <ArrowIcon />
-                        </span>
+                        <div className="mt-4">
+                          <span className="text-secondary-container font-label-sm text-label-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                            Read Report
+                            <ArrowIcon />
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </a>
-              </article>
+                  </a>
+                </article>
+              )}
 
-              {[policy, trends, ethics].map((item, idx) => (
+              {[policy, trends, ethics].filter(Boolean).map((item) => (
                 <article key={item.category} className="col-span-1 md:col-span-4 group cursor-pointer mt-lg">
                   <a href={item.link} target="_blank" rel="noreferrer">
-                    <div className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-lg h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5 ${idx === 2 ? 'bg-gradient-to-br from-surface-container-lowest to-surface-container-low' : ''}`}>
+                    <div className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-lg h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5 ${item.category === 'Ethics & Governance' ? 'bg-gradient-to-br from-surface-container-lowest to-surface-container-low' : ''}`}>
                       <div className="flex items-center gap-sm mb-md">
                         <span className="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">{item.category}</span>
                       </div>
@@ -168,7 +165,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
               ))}
             </div>
           </section>
-        ) : (
+        ) : activeFilter !== 'All Insights' ? (
           <section className="max-w-container-max mx-auto px-gutter pb-xxl">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
               {filteredList.map((item) => (
@@ -207,7 +204,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
               ))}
             </div>
           </section>
-        )}
+        ) : null}
       </main>
     </>
   );

@@ -169,19 +169,6 @@ function toTimestamp(value?: string): number {
   return Number.isNaN(ts) ? 0 : ts;
 }
 
-function fallbackInsight(category: Category): CategoryInsight {
-  return {
-    category,
-    title: `No RSS articles found for ${category}`,
-    summary: 'Please check RSS source availability or configure RSS_SOURCES_JSON to provide valid feed URLs.',
-    link: '#',
-    source: 'Fallback',
-    publishedAt: new Date(0).toISOString(),
-    image: DEFAULT_IMAGES[category],
-    readTime: '4 MIN READ',
-  };
-}
-
 async function fetchCategoryInsights(
   category: Category,
   sources: FeedSource[],
@@ -223,9 +210,7 @@ async function fetchCategoryInsights(
     }
   }
 
-  if (candidates.length === 0) {
-    return [fallbackInsight(category)];
-  }
+  if (candidates.length === 0) return [];
 
   const seen = new Set<string>();
   candidates.sort((a, b) => toTimestamp(b.publishedAt) - toTimestamp(a.publishedAt));
