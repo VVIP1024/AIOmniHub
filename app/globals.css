@@ -30,6 +30,14 @@
   @apply font-body-md text-body-md text-on-surface mb-6;
 }
 
+.markdown-content blockquote {
+  @apply border-l-4 border-secondary-container bg-surface-container-low px-4 py-3 mb-6 font-body-lg text-body-lg italic text-on-surface-variant;
+}
+
+.markdown-content blockquote p {
+  @apply mb-0;
+}
+
 .markdown-content ul {
   @apply list-disc list-outside ml-6 mb-6 font-body-md text-body-md text-on-surface;
 }

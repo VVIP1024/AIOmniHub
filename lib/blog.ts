@@ -66,7 +66,7 @@ function extractSummaryBlock(lines: string[]): { summary: string | null; content
 
   return {
     summary: summary || null,
-    contentLines: [...lines.slice(0, startIndex), ...lines.slice(endIndex)],
+    contentLines: lines,
   };
 }
 
