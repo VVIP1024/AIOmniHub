@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -123,6 +124,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
       <main className="flex-grow w-full pt-8 pb-xxl">
         <article className="max-w-[720px] mx-auto px-4 md:px-0 markdown-content">
+          <Link
+            href="/"
+            className="mb-8 inline-flex items-center gap-2 font-nav-link text-nav-link text-on-surface-variant transition-colors hover:text-primary"
+          >
+            <span aria-hidden="true">←</span>
+            Back to insights
+          </Link>
+
           <div className="mb-12">
             <span className="inline-block bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant mb-4">
               BLOG
