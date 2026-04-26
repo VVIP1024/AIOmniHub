@@ -63,6 +63,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
   const policy = insights['Policy & Regulation'][0];
   const trends = insights['Tech Trends'][0];
   const ethics = insights['Ethics & Governance'][0];
+  const recentBlogInsights = insights.Blog.slice(0, 3);
 
   const filteredList = activeFilter === 'All Insights' ? [] : insights[activeFilter];
 
@@ -156,7 +157,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
                 </article>
               )}
 
-              {[policy, trends, ethics, ...insights.Blog].filter(isInsight).map((item) => (
+              {[policy, trends, ethics, ...recentBlogInsights].filter(isInsight).map((item) => (
                 <article key={`${item.link}-${item.title}`} className="col-span-1 md:col-span-4 group cursor-pointer mt-lg">
                   <a href={item.link} {...getLinkProps(item.link)}>
                     <div className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-lg h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5 ${item.category === 'Ethics & Governance' ? 'bg-gradient-to-br from-surface-container-lowest to-surface-container-low' : ''}`}>
