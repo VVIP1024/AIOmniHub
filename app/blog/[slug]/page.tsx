@@ -1,9 +1,11 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import SiteFooter from '@/components/SiteFooter';
 import SiteHeader from '@/components/SiteHeader';
 import { getBlogPost } from '@/lib/blog';
+import { getAbsoluteUrl } from '@/lib/site';
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -12,6 +14,49 @@ interface BlogPostPageProps {
 }
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
+
+  if (!post) {
+    return {
+      title: 'Blog article not found',
+    };
+  }
+
+  const canonicalPath = `/blog/${encodeURIComponent(post.slug)}`;
+  const canonicalUrl = getAbsoluteUrl(canonicalPath);
+  const imageUrl = getAbsoluteUrl(post.image);
+
+  return {
+    title: post.title,
+    description: post.summary,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.summary,
+      url: canonicalUrl,
+      siteName: 'Intellect & Insight',
+      type: 'article',
+      publishedTime: post.uploadedAt,
+      images: [
+        {
+          url: imageUrl,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.summary,
+      images: [imageUrl],
+    },
+  };
+}
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;

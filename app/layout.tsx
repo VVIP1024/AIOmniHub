@@ -1,9 +1,14 @@
 import type { Metadata } from 'next';
+import { getSiteUrl } from '@/lib/site';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: 'AI Insights & Strategy',
-  description: 'AI insights and strategy website prototype implementation.',
+  description: 'AI insights, strategy analysis, and blog articles for emerging AI tools.',
+  alternates: {
+    canonical: '/',
+  },
 };
 
 export default function RootLayout({
