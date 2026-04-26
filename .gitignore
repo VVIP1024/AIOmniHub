@@ -32,3 +32,5 @@ Thumbs.db
 # local cache/backups
 .next.stale-*/
 .superpowers/
+
+.edge_config.json5

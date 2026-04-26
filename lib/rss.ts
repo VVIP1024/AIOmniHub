@@ -1,3 +1,5 @@
+import { get } from '@vercel/edge-config';
+import { saveHomepageInsightsToBlob } from '@/lib/blob';
 import Parser from 'rss-parser';
 
 export type Category =
@@ -30,6 +32,14 @@ type ExtendedItem = Parser.Item & {
 
 export type HomepageInsights = Record<Category, CategoryInsight[]>;
 
+const EDGE_CONFIG_KEYS: Record<Category, string> = {
+  'AI Strategy': 'AI-Strategy',
+  'Tech Trends': 'Tech-Trends',
+  'Policy & Regulation': 'Policy-Regulation',
+  'Ethics & Governance': 'Ethics-Governance',
+  'Research & Data': 'Research-Data',
+};
+
 const parser = new Parser({
   timeout: 10000,
   headers: {
@@ -59,73 +69,60 @@ const DEFAULT_IMAGES: Record<Category, string> = {
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCCtre3nBxfKjyzjtISH7TUTLf00qAnoiQYNIhX5dU-Q-q_hoMFHc4_irOm2iFzKMjy_yYcWPTKIkiQJoi9EUNw9zJrvWA8jNvqdGwOzPYIo7PTLMOrsAfFf9f9TdmuNYR3THRw8bUEveMBxFEdFZH9AU6b58ebExbmAR_F8sEP7lgkTZZ3PrBIo0zjLs2cVHwtb5lXdyot6ajcudAiR8CBDebbXCSJB02WHPQG9IuBSXPs85DWaysx9Ps2tBOagZXQqxRMa2x3lFI',
 };
 
-const DEFAULT_SOURCES: Record<Category, FeedSource[]> = {
-  'AI Strategy': [
-    {
-      name: 'Google News - AI Strategy',
-      url: 'https://news.google.com/rss/search?q=enterprise+AI+strategy&hl=en-US&gl=US&ceid=US:en',
-    },
-    {
-      name: 'OpenAI News',
-      url: 'https://openai.com/news/rss.xml',
-    },
-  ],
-  'Tech Trends': [
-    {
-      name: 'Google News - AI Tech Trends',
-      url: 'https://news.google.com/rss/search?q=AI+technology+trends&hl=en-US&gl=US&ceid=US:en',
-    },
-    {
-      name: 'Hugging Face Blog',
-      url: 'https://huggingface.co/blog/feed.xml',
-    },
-  ],
-  'Policy & Regulation': [
-    {
-      name: 'Google News - AI Policy',
-      url: 'https://news.google.com/rss/search?q=AI+policy+regulation&hl=en-US&gl=US&ceid=US:en',
-    },
-  ],
-  'Ethics & Governance': [
-    {
-      name: 'Google News - AI Ethics',
-      url: 'https://news.google.com/rss/search?q=AI+ethics+governance&hl=en-US&gl=US&ceid=US:en',
-    },
-  ],
-  'Research & Data': [
-    {
-      name: 'Google News - AI Research',
-      url: 'https://news.google.com/rss/search?q=AI+research+benchmark&hl=en-US&gl=US&ceid=US:en',
-    },
-    {
-      name: 'arXiv cs.AI',
-      url: 'http://export.arxiv.org/rss/cs.AI',
-    },
-  ],
-};
-
 function isCategory(value: string): value is Category {
   return CATEGORY_ORDER.includes(value as Category);
 }
 
-function getSourcesFromEnv(): Record<Category, FeedSource[]> | null {
-  const raw = process.env.RSS_SOURCES_JSON;
-  if (!raw) return null;
+function sanitizeFeedSources(value: unknown): FeedSource[] | null {
+  if (!Array.isArray(value)) return null;
 
+  return value.filter(
+    (item): item is FeedSource =>
+      item !== null &&
+      typeof item === 'object' &&
+      typeof (item as FeedSource).name === 'string' &&
+      typeof (item as FeedSource).url === 'string',
+  );
+}
+
+function mapDashedSourceConfig(parsed: Record<string, unknown>): Record<Category, FeedSource[]> | null {
+  const mapped: Partial<Record<Category, FeedSource[]>> = {};
+
+  for (const category of CATEGORY_ORDER) {
+    const cleaned = sanitizeFeedSources(parsed[EDGE_CONFIG_KEYS[category]]);
+    if (cleaned === null) return null;
+    mapped[category] = cleaned;
+  }
+
+  return mapped as Record<Category, FeedSource[]>;
+}
+
+function mapCategorySourceConfig(parsed: Record<string, unknown>): Record<Category, FeedSource[]> | null {
+  const mapped: Partial<Record<Category, FeedSource[]>> = {};
+
+  for (const category of CATEGORY_ORDER) {
+    const cleaned = sanitizeFeedSources(parsed[category]);
+    if (cleaned === null) return null;
+    mapped[category] = cleaned;
+  }
+
+  return mapped as Record<Category, FeedSource[]>;
+}
+
+async function getSourcesFromEdgeConfig(): Promise<Record<Category, FeedSource[]> | null> {
   try {
-    const parsed = JSON.parse(raw) as Record<string, FeedSource[]>;
-    const mapped: Partial<Record<Category, FeedSource[]>> = {};
+    const entries = await Promise.all(
+      CATEGORY_ORDER.map(async (category) => [category, await get(EDGE_CONFIG_KEYS[category])] as const),
+    );
 
-    for (const [key, value] of Object.entries(parsed)) {
-      if (!isCategory(key) || !Array.isArray(value)) continue;
-      const cleaned = value.filter(
-        (item) => item && typeof item.name === 'string' && typeof item.url === 'string',
-      );
-      if (cleaned.length > 0) mapped[key] = cleaned;
+    const mapped: Partial<Record<Category, FeedSource[]>> = {};
+    for (const [category, value] of entries) {
+      const cleaned = sanitizeFeedSources(value);
+      if (cleaned === null) return null;
+      mapped[category] = cleaned;
     }
 
-    const isComplete = CATEGORY_ORDER.every((key) => Array.isArray(mapped[key]) && mapped[key]!.length > 0);
-    return isComplete ? (mapped as Record<Category, FeedSource[]>) : null;
+    return mapped as Record<Category, FeedSource[]>;
   } catch {
     return null;
   }
@@ -242,7 +239,19 @@ async function fetchCategoryInsights(
 }
 
 export async function getHomepageInsights(): Promise<HomepageInsights> {
-  const sources = getSourcesFromEnv() ?? DEFAULT_SOURCES;
+  const sources = await getSourcesFromEdgeConfig();
+  if (!sources) {
+    const emptyInsights = {
+      'AI Strategy': [],
+      'Tech Trends': [],
+      'Policy & Regulation': [],
+      'Ethics & Governance': [],
+      'Research & Data': [],
+    } as HomepageInsights;
+
+    await saveHomepageInsightsToBlob(emptyInsights);
+    return emptyInsights;
+  }
 
   const results = await Promise.all(
     CATEGORY_ORDER.map(
@@ -250,7 +259,9 @@ export async function getHomepageInsights(): Promise<HomepageInsights> {
     ),
   );
 
-  return Object.fromEntries(results) as HomepageInsights;
+  const insights = Object.fromEntries(results) as HomepageInsights;
+  await saveHomepageInsightsToBlob(insights);
+  return insights;
 }
 
 export const categoryOrder = CATEGORY_ORDER;
