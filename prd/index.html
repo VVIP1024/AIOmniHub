@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Insights &amp; Strategy</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#fcf8fa",
+                        "surface-bright": "#fcf8fa",
+                        "secondary-container": "#2170e4",
+                        "tertiary-fixed": "#fcdeb5",
+                        "inverse-on-surface": "#f3f0f2",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-primary-fixed": "#131b2e",
+                        "inverse-primary": "#bec6e0",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#f0edef",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#271901",
+                        "on-tertiary-fixed": "#271901",
+                        "on-secondary-container": "#fefcff",
+                        "primary-fixed-dim": "#bec6e0",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#dcd9db",
+                        "on-tertiary-fixed-variant": "#574425",
+                        "primary": "#000000",
+                        "tertiary-fixed-dim": "#dec29a",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f6f3f5",
+                        "inverse-surface": "#303032",
+                        "secondary": "#0058be",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-variant": "#e4e2e4",
+                        "on-surface": "#1b1b1d",
+                        "surface-tint": "#565e74",
+                        "primary-container": "#131b2e",
+                        "on-primary": "#ffffff",
+                        "on-background": "#1b1b1d",
+                        "outline": "#76777d",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#45464d",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "secondary-fixed": "#d8e2ff",
+                        "tertiary": "#000000",
+                        "outline-variant": "#c6c6cd",
+                        "on-primary-container": "#7c839b",
+                        "surface-container-highest": "#e4e2e4",
+                        "primary-fixed": "#dae2fd",
+                        "on-tertiary-container": "#98805d",
+                        "background": "#fcf8fa",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#eae7e9",
+                        "on-secondary-fixed-variant": "#004395"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "reading-width": "720px",
+                        "xl": "48px",
+                        "container-max": "1140px",
+                        "lg": "24px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "xxl": "80px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Newsreader"],
+                        "body-lg": ["Newsreader"],
+                        "nav-link": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "h1": ["Newsreader"],
+                        "h2": ["Newsreader"],
+                        "label-sm": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                        "body-lg": ["20px", { "lineHeight": "1.7", "fontWeight": "400" }],
+                        "nav-link": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "h1": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "h2": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col">
+<!-- TopAppBar (Main Nav) -->
+<header class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-serif newsreader tracking-tight docked full-width top-0 border-b border-slate-200 dark:border-slate-800 flat no shadows sticky z-50">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-semibold tracking-tighter text-slate-900 dark:text-slate-50 font-serif">
+                Intellect &amp; Insight
+            </div>
+<nav class="hidden md:flex gap-8 items-center">
+<!-- Using exact strings from JSON -->
+<a class="text-slate-900 dark:text-slate-50 font-bold border-b-2 border-slate-900 dark:border-slate-50 pb-1 hover:text-slate-900 dark:hover:text-slate-200 transition-colors opacity-80 duration-150" href="#">Insights</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest text-[11px] hover:text-slate-900 dark:hover:text-slate-200 transition-colors" href="#">Library</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest text-[11px] hover:text-slate-900 dark:hover:text-slate-200 transition-colors" href="#">Network</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest text-[11px] hover:text-slate-900 dark:hover:text-slate-200 transition-colors" href="#">About</a>
+</nav>
+<div class="flex items-center gap-4">
+<button aria-label="search" class="hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button aria-label="bookmark" class="hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+</button>
+</div>
+</div>
+</header>
+<!-- TopAppBar (Category Nav) - As requested, replacing generic JSON categories with specific AI ones while keeping JSON styles where possible -->
+<nav class="bg-slate-50/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 font-sans manrope full-width border-b border-slate-100 dark:border-slate-900 flat no shadows sticky top-[72px] z-40 backdrop-blur-sm">
+<div class="flex justify-center items-center w-full gap-4 py-3 px-8 overflow-x-auto max-w-7xl mx-auto">
+<a class="text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-800 rounded-full px-4 py-1 shadow-sm font-nav-link text-nav-link whitespace-nowrap Scale 0.98 on click transition-all" href="#">All Insights</a>
+<a class="text-slate-500 dark:text-slate-400 px-4 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all font-nav-link text-nav-link whitespace-nowrap" href="#">AI Strategy</a>
+<a class="text-slate-500 dark:text-slate-400 px-4 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all font-nav-link text-nav-link whitespace-nowrap" href="#">Tech Trends</a>
+<a class="text-slate-500 dark:text-slate-400 px-4 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all font-nav-link text-nav-link whitespace-nowrap" href="#">Policy &amp; Regulation</a>
+<a class="text-slate-500 dark:text-slate-400 px-4 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all font-nav-link text-nav-link whitespace-nowrap" href="#">Ethics &amp; Governance</a>
+<a class="text-slate-500 dark:text-slate-400 px-4 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all font-nav-link text-nav-link whitespace-nowrap" href="#">Research &amp; Data</a>
+</div>
+</nav>
+<main class="flex-grow">
+<!-- Hero Section -->
+<section class="max-w-container-max mx-auto px-gutter py-xxl text-center">
+<h1 class="font-h1 text-h1 text-primary mb-sm">AI Insights &amp; Strategy</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-reading-width mx-auto">Distilling complex intelligence into actionable frameworks.</p>
+</section>
+<!-- Insights Bento Grid -->
+<section class="max-w-container-max mx-auto px-gutter pb-xxl">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Featured Insight (Large) -->
+<article class="col-span-1 md:col-span-8 group cursor-pointer">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-[480px] flex flex-col relative transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
+<div class="h-2/3 w-full bg-surface-variant overflow-hidden">
+<img alt="Abstract rendering of neural network nodes glowing in soft blue and white on a dark minimal background" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="Abstract rendering of neural network nodes glowing in soft blue and white on a dark minimal background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkc7b2xaKjr3qaZtdOOljyB6gnyk8oZRutoNh6NUeOMoJQzMNVukPxB7ZV-SNnGWtGB1RZZ7U6U5FlcttQSuHMatvHpGuijaM-IqVQu9jPZ6HBp5QhYm3tFx_S6tcnmDid6-ZP2TKlemxaBER5av3dVLA6lbwLIgtPjSdEZmqe62tDa6iTCU0CeDPy21mCRSlFltVzK3BWrt2fNe38n9EIP0IIiPJPXa_wwTvakMJB8DSwM_JVzoSQA0ea0W9Qr3HjxsSBorkb0R0"/>
+</div>
+<div class="p-lg flex-grow flex flex-col justify-between bg-surface-container-lowest z-10">
+<div>
+<div class="flex items-center gap-sm mb-sm">
+<span class="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">AI Strategy</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">8 MIN READ</span>
+</div>
+<h2 class="font-h2 text-h2 text-on-surface mb-xs group-hover:text-secondary-container transition-colors">The Enterprise Imperative: Moving Beyond Generative AI Pilots</h2>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">A comprehensive framework for scaling artificial intelligence initiatives across business units while mitigating operational risks and ensuring measurable ROI.</p>
+</div>
+</div>
+</div>
+</article>
+<!-- Side Insight (Vertical) -->
+<article class="col-span-1 md:col-span-4 group cursor-pointer">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-[480px] flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
+<div class="h-1/2 w-full bg-surface-variant overflow-hidden">
+<img alt="Clean minimal data visualization charts on a modern digital screen with soft lighting" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="Clean minimal data visualization charts on a modern digital screen with soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCtre3nBxfKjyzjtISH7TUTLf00qAnoiQYNIhX5dU-Q-q_hoMFHc4_irOm2iFzKMjy_yYcWPTKIkiQJoi9EUNw9zJrvWA8jNvqdGwOzPYIo7PTLMOrsAfFf9f9TdmuNYR3THRw8bUEveMBxFEdFZH9AU6b58ebExbmAR_F8sEP7lgkTZZ3PrBIo0zjLs2cVHwtb5lXdyot6ajcudAiR8CBDebbXCSJB02WHPQG9IuBSXPs85DWaysx9Ps2tBOagZXQqxRMa2x3lFI"/>
+</div>
+<div class="p-lg flex-grow flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-sm mb-sm">
+<span class="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">Research &amp; Data</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-sm group-hover:text-secondary-container transition-colors">Quarterly AI Adoption Index: Q3 Analysis</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-4">Our proprietary data reveals a significant shift in enterprise budget allocation toward foundational model fine-tuning over off-the-shelf SaaS solutions.</p>
+</div>
+<div class="mt-4">
+<span class="text-secondary-container font-label-sm text-label-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Report <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span></span>
+</div>
+</div>
+</div>
+</article>
+<!-- Standard Insights (Grid) -->
+<article class="col-span-1 md:col-span-4 group cursor-pointer mt-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
+<div class="flex items-center gap-sm mb-md">
+<span class="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">Policy &amp; Regulation</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-sm group-hover:text-secondary-container transition-colors">Navigating the EU AI Act: Strategic Implications</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md flex-grow">A breakdown of compliance requirements for high-risk systems and how global organizations should restructure their governance boards.</p>
+<div class="w-full h-[1px] bg-outline-variant/30 mb-md"></div>
+<span class="text-on-surface-variant font-label-sm text-label-sm">5 MIN READ</span>
+</div>
+</article>
+<article class="col-span-1 md:col-span-4 group cursor-pointer mt-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5">
+<div class="flex items-center gap-sm mb-md">
+<span class="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">Tech Trends</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-sm group-hover:text-secondary-container transition-colors">The Rise of Small Language Models (SLMs)</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md flex-grow">Why deploying specialized, parameter-efficient models on edge devices is becoming the preferred strategy for latency-sensitive applications.</p>
+<div class="w-full h-[1px] bg-outline-variant/30 mb-md"></div>
+<span class="text-on-surface-variant font-label-sm text-label-sm">6 MIN READ</span>
+</div>
+</article>
+<article class="col-span-1 md:col-span-4 group cursor-pointer mt-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-primary-container/5 bg-gradient-to-br from-surface-container-lowest to-surface-container-low">
+<div class="flex items-center gap-sm mb-md">
+<span class="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">Ethics &amp; Governance</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-sm group-hover:text-secondary-container transition-colors">Mitigating Algorithmic Bias in Hiring Systems</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md flex-grow">Best practices for auditing recruitment algorithms to ensure fair outcomes while maintaining operational efficiency at scale.</p>
+<div class="w-full h-[1px] bg-outline-variant/30 mb-md"></div>
+<span class="text-on-surface-variant font-label-sm text-label-sm">4 MIN READ</span>
+</div>
+</article>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans manrope text-sm full-width border-t mt-20 border-t border-slate-200 dark:border-slate-800 flat no shadows Transition-all duration-300">
+<div class="max-w-7xl mx-auto px-8 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="font-serif italic text-lg text-slate-900 dark:text-slate-50">
+                Intellect &amp; Insight
+            </div>
+<nav class="flex flex-wrap justify-center gap-6">
+<!-- Using exact strings from JSON -->
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline transition-colors" href="#">Terms of Service</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline transition-colors" href="#">Expert Network</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline transition-colors" href="#">Contact</a>
+</nav>
+<div class="text-slate-500 dark:text-slate-400 text-xs">
+                © 2024 Intellect &amp; Insight AI. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>
