@@ -33,7 +33,7 @@ function BookmarkIcon() {
 function getNavLinkClass(isActive: boolean, compact = false): string {
   const base = compact
     ? 'font-medium uppercase tracking-widest text-xs transition-all duration-200 ease-out'
-    : 'font-medium uppercase tracking-widest text-[11px] transition-colors';
+    : 'font-medium uppercase tracking-widest text-[15px] transition-colors';
 
   return isActive
     ? `text-slate-900 dark:text-slate-50 font-bold border-b-2 border-slate-900 dark:border-slate-50 pb-1 ${base}`
