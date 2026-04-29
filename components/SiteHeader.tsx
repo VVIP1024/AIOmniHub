@@ -43,7 +43,7 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
             </a>
             <a
               className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest text-xs hover:text-slate-900 dark:hover:text-slate-200 transition-all duration-200 ease-out"
-              href="#"
+            href="/doc-chat"
             >
               Resource Library
             </a>
@@ -68,7 +68,7 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
           </a>
           <a
             className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest text-[11px] hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
-            href="#"
+            href="/doc-chat"
           >
             Library
           </a>

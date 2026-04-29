@@ -43,6 +43,23 @@ function getLinkProps(link: string) {
   return link.startsWith('/') ? {} : { target: '_blank', rel: 'noreferrer' };
 }
 
+function TagList({ tags }: { tags?: string[] }) {
+  if (!tags?.length) return null;
+
+  return (
+    <div className="mb-md flex flex-wrap gap-2">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="rounded-full bg-secondary-container/10 px-2.5 py-1 font-label-sm text-label-sm text-secondary-container"
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedProps) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All Insights');
 
@@ -164,6 +181,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
                       <div className="flex items-center gap-sm mb-md">
                         <span className="bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">{item.category}</span>
                       </div>
+                      <TagList tags={item.tags} />
                       <h3 className="font-h3 text-h3 text-on-surface mb-sm group-hover:text-secondary-container transition-colors">{item.title}</h3>
                       <p className="font-body-md text-body-md text-on-surface-variant mb-md flex-grow">{item.summary}</p>
                       <div className="w-full h-[1px] bg-outline-variant/30 mb-md" />
@@ -195,6 +213,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
                           </span>
                           <span className="text-on-surface-variant font-label-sm text-label-sm">{item.readTime}</span>
                         </div>
+                        <TagList tags={item.tags} />
                         <h3 className="font-h3 text-h3 text-on-surface mb-sm group-hover:text-secondary-container transition-colors line-clamp-3">
                           {item.title}
                         </h3>

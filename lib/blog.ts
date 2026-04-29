@@ -1,4 +1,5 @@
 import { get as getBlob, list } from '@vercel/blob';
+import matter from 'gray-matter';
 import type { CategoryInsight } from '@/lib/rss';
 
 const BLOG_PREFIX = 'Blog/';
@@ -8,6 +9,9 @@ const BLOG_IMAGE =
 export interface BlogPost {
   slug: string;
   title: string;
+  description: string;
+  keywords: string[];
+  tags: string[];
   summary: string;
   content: string;
   image: string;
@@ -18,6 +22,13 @@ export interface BlogPost {
 interface BlogMarkdownBlob {
   pathname: string;
   uploadedAt: Date;
+}
+
+interface BlogFrontmatter {
+  title?: unknown;
+  description?: unknown;
+  keywords?: unknown;
+  tags?: unknown;
 }
 
 function stripMarkdown(input: string): string {
@@ -76,29 +87,45 @@ function extractSummaryBlock(lines: string[]): { summary: string | null; content
   };
 }
 
+function toCleanString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function toStringArray(value: unknown): string[] {
+  const rawValues = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
+  return rawValues
+    .map((item) => String(item).trim())
+    .filter(Boolean);
+}
+
 function parsePost(slug: string, markdown: string, uploadedAt: Date): BlogPost {
-  const lines = markdown.split(/\r?\n/);
+  const parsed = matter(markdown);
+  const frontmatter = parsed.data as BlogFrontmatter;
+  const body = parsed.content.trim();
+  const lines = body.split(/\r?\n/);
   const titleLineIndex = lines.findIndex((line) => line.trim().startsWith('# '));
   const title =
-    titleLineIndex >= 0
-      ? lines[titleLineIndex].replace(/^#\s+/, '').trim()
-      : slug;
-  const bodyLines =
-    titleLineIndex >= 0
-      ? [...lines.slice(0, titleLineIndex), ...lines.slice(titleLineIndex + 1)]
-      : lines;
-  const { summary, contentLines } = extractSummaryBlock(bodyLines);
+    toCleanString(frontmatter.title) ??
+    (titleLineIndex >= 0 ? lines[titleLineIndex].replace(/^#\s+/, '').trim() : slug);
+  const { summary, contentLines } = extractSummaryBlock(lines);
   const content = contentLines.join('\n').trim();
   const firstParagraph = contentLines.find((line) => line.trim() && !line.trim().startsWith('#'));
+  const description = truncate(
+    stripMarkdown(toCleanString(frontmatter.description) ?? summary ?? firstParagraph ?? content),
+    180,
+  );
 
   return {
     slug,
     title,
-    summary: truncate(stripMarkdown(summary ?? firstParagraph ?? content), 180),
+    description,
+    keywords: toStringArray(frontmatter.keywords),
+    tags: toStringArray(frontmatter.tags),
+    summary: description,
     content,
     image: extractFirstImage(content) ?? BLOG_IMAGE,
     uploadedAt: uploadedAt.toISOString(),
-    readTime: estimateReadTime(markdown),
+    readTime: estimateReadTime(content),
   };
 }
 
@@ -175,6 +202,7 @@ export async function getBlogInsights(): Promise<CategoryInsight[]> {
     publishedAt: post.uploadedAt,
     image: post.image,
     readTime: post.readTime,
+    tags: post.tags,
   }));
 }
 

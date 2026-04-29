@@ -45,8 +45,8 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
   return {
     title: post.title,
-    description: post.summary,
-    keywords: getBlogKeywords(post.title),
+    description: post.description,
+    keywords: post.keywords.length > 0 ? post.keywords : getBlogKeywords(post.title),
     authors: [{ name: 'Intellect & Insight' }],
     creator: 'Intellect & Insight',
     publisher: 'Intellect & Insight',
@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     },
     openGraph: {
       title: post.title,
-      description: post.summary,
+      description: post.description,
       url: canonicalUrl,
       siteName: 'Intellect & Insight',
       type: 'article',
@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.summary,
+      description: post.description,
       images: [imageUrl],
     },
   };
@@ -100,7 +100,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: post.title,
-    description: post.summary,
+    description: post.description,
+    keywords: post.keywords,
     image: [imageUrl],
     datePublished: post.uploadedAt,
     dateModified: post.uploadedAt,

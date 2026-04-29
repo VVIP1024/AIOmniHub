@@ -25,6 +25,7 @@ export interface CategoryInsight {
   publishedAt: string;
   image: string;
   readTime: string;
+  tags?: string[];
 }
 
 type ExtendedItem = Parser.Item & {

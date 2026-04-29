@@ -10,8 +10,10 @@
     "dependencies": {
         "@vercel/blob": "^2.3.3",
         "@vercel/edge-config": "^1.1.0",
+        "gray-matter": "^4.0.3",
         "next": "^15.0.0",
         "next-themes": "^0.3.0",
+        "pdfjs-dist": "^5.7.284",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-markdown": "^10.1.0",
