@@ -49,8 +49,8 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
     return (
       <nav className="bg-white dark:bg-slate-950 font-serif text-lg leading-relaxed full-width top-0 sticky z-50 border-b border-slate-100 dark:border-slate-800 flat no shadows">
         <div className="flex justify-between items-center max-w-7xl mx-auto px-8 py-6 w-full">
-          <div className="font-serif italic font-bold text-2xl tracking-tight text-slate-900 dark:text-slate-50">
-            智询 AI
+          <div className="font-serif text-[28px] font-semibold leading-none tracking-tighter text-slate-900 dark:text-slate-50 md:text-[32px]">
+            智识洞察
           </div>
           <div className="hidden md:flex gap-8 items-center">
             <a
