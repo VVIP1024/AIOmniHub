@@ -13,11 +13,11 @@ export interface PageSearchResult extends DocumentPage {
 export interface StoredPageIndex {
   pageIndex: number;
   tokens: string[];
-  vector: Array<[string, number]>;
+  embedding: number[];
 }
 
 interface IndexedPage extends DocumentPage {
-  vector: Map<string, number>;
+  embedding: number[];
 }
 
 interface OramaSearchHit {
@@ -34,8 +34,24 @@ interface OramaSearchResult {
 export interface DocumentIndex {
   pages: DocumentPage[];
   indexedPages: IndexedPage[];
-  documentFrequency: Map<string, number>;
   orama: unknown;
+}
+
+interface FeatureExtractionOutput {
+  data: Float32Array | number[];
+}
+
+type FeatureExtractor = (
+  input: string,
+  options: { pooling: 'mean'; normalize: true },
+) => Promise<FeatureExtractionOutput>;
+
+interface TransformersModule {
+  env: {
+    allowLocalModels?: boolean;
+    useBrowserCache?: boolean;
+  };
+  pipeline: (task: 'feature-extraction', model: string) => Promise<FeatureExtractor>;
 }
 
 const TOKEN_PATTERN = /[a-z0-9]+|[\u4e00-\u9fff]/gi;
@@ -67,6 +83,28 @@ const searchOrama = search as unknown as (
   params: { term: string; properties: string[]; limit: number },
 ) => Promise<OramaSearchResult>;
 
+const MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
+const TRANSFORMERS_CDN = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+const MAX_EMBEDDING_CHARS = 4000;
+
+let extractorPromise: Promise<FeatureExtractor> | null = null;
+
+async function getEmbeddingExtractor(): Promise<FeatureExtractor> {
+  if (!extractorPromise) {
+    const importFromCdn = new Function('url', 'return import(url)') as (
+      url: string,
+    ) => Promise<TransformersModule>;
+
+    extractorPromise = importFromCdn(TRANSFORMERS_CDN).then(async ({ env, pipeline }) => {
+      env.allowLocalModels = false;
+      env.useBrowserCache = true;
+      return pipeline('feature-extraction', MODEL_ID);
+    });
+  }
+
+  return extractorPromise;
+}
+
 export function tokenizeDocumentText(text: string): string[] {
   const rawTokens = text.toLowerCase().match(TOKEN_PATTERN) ?? [];
   const tokens: string[] = [];
@@ -97,60 +135,18 @@ export function tokenizeDocumentText(text: string): string[] {
   return tokens.filter((token) => token.length > 1 && !STOP_WORDS.has(token));
 }
 
-function termFrequency(tokens: string[]): Map<string, number> {
-  const vector = new Map<string, number>();
-  for (const token of tokens) {
-    vector.set(token, (vector.get(token) ?? 0) + 1);
-  }
-
-  const maxFrequency = Math.max(...Array.from(vector.values()), 1);
-  for (const [token, count] of Array.from(vector.entries())) {
-    vector.set(token, count / maxFrequency);
-  }
-
-  return vector;
-}
-
-function buildDocumentFrequency(pageTokens: string[][]): Map<string, number> {
-  const documentFrequency = new Map<string, number>();
-
-  for (const tokens of pageTokens) {
-    for (const token of Array.from(new Set(tokens))) {
-      documentFrequency.set(token, (documentFrequency.get(token) ?? 0) + 1);
-    }
-  }
-
-  return documentFrequency;
-}
-
-function applyInverseDocumentFrequency(
-  vector: Map<string, number>,
-  documentFrequency: Map<string, number>,
-  pageCount: number,
-): Map<string, number> {
-  const weighted = new Map<string, number>();
-
-  for (const [token, value] of Array.from(vector.entries())) {
-    const frequency = documentFrequency.get(token) ?? 0;
-    const inverseDocumentFrequency = Math.log((pageCount + 1) / (frequency + 1)) + 1;
-    weighted.set(token, value * inverseDocumentFrequency);
-  }
-
-  return weighted;
-}
-
-function cosineSimilarity(left: Map<string, number>, right: Map<string, number>): number {
+function cosineSimilarity(left: number[], right: number[]): number {
   let dotProduct = 0;
   let leftMagnitude = 0;
   let rightMagnitude = 0;
+  const length = Math.min(left.length, right.length);
 
-  for (const value of Array.from(left.values())) {
-    leftMagnitude += value * value;
-  }
-
-  for (const [token, value] of Array.from(right.entries())) {
-    rightMagnitude += value * value;
-    dotProduct += (left.get(token) ?? 0) * value;
+  for (let index = 0; index < length; index += 1) {
+    const leftValue = left[index] ?? 0;
+    const rightValue = right[index] ?? 0;
+    dotProduct += leftValue * rightValue;
+    leftMagnitude += leftValue * leftValue;
+    rightMagnitude += rightValue * rightValue;
   }
 
   if (leftMagnitude === 0 || rightMagnitude === 0) return 0;
@@ -172,35 +168,41 @@ function extractHighlights(text: string, queryTokens: string[]): string[] {
   return (matched.length > 0 ? matched : sentences).slice(0, 3);
 }
 
-function toStoredVector(vector: Map<string, number>): Array<[string, number]> {
-  return Array.from(vector.entries());
+function toEmbeddingText(text: string): string {
+  return text.replace(/\s+/g, ' ').trim().slice(0, MAX_EMBEDDING_CHARS);
 }
 
-function fromStoredVector(vector: Array<[string, number]>): Map<string, number> {
-  return new Map(vector);
+async function embedText(text: string): Promise<number[]> {
+  const extractor = await getEmbeddingExtractor();
+  const output = await extractor(toEmbeddingText(text), { pooling: 'mean', normalize: true });
+  return Array.from(output.data);
 }
 
-export function createStoredPageIndexes(pages: DocumentPage[]): StoredPageIndex[] {
-  const pageTokens = pages.map((page) => tokenizeDocumentText(page.text));
-  const documentFrequency = buildDocumentFrequency(pageTokens);
+async function getPageEmbedding(page: DocumentPage, storedPageIndexes: StoredPageIndex[]): Promise<number[]> {
+  const stored = storedPageIndexes.find((pageIndex) => pageIndex.pageIndex === page.pageIndex);
+  if (stored?.embedding?.length) return stored.embedding;
+  return embedText(page.text);
+}
 
-  return pages.map((page, index) => ({
-    pageIndex: page.pageIndex,
-    tokens: pageTokens[index] ?? [],
-    vector: toStoredVector(
-      applyInverseDocumentFrequency(
-        termFrequency(pageTokens[index] ?? []),
-        documentFrequency,
-        pages.length,
-      ),
-    ),
-  }));
+export async function createStoredPageIndexes(pages: DocumentPage[]): Promise<StoredPageIndex[]> {
+  const pageIndexes: StoredPageIndex[] = [];
+
+  for (const page of pages) {
+    pageIndexes.push({
+      pageIndex: page.pageIndex,
+      tokens: tokenizeDocumentText(page.text),
+      embedding: await embedText(page.text),
+    });
+  }
+
+  return pageIndexes;
 }
 
 export async function buildDocumentIndex(
   pages: DocumentPage[],
-  storedPageIndexes = createStoredPageIndexes(pages),
+  storedPageIndexes?: StoredPageIndex[],
 ): Promise<DocumentIndex> {
+  const pageIndexes = storedPageIndexes ?? (await createStoredPageIndexes(pages));
   const orama = await create({
     schema: {
       pageIndex: 'number',
@@ -216,28 +218,18 @@ export async function buildDocumentIndex(
     })),
   );
 
-  const tokenByPageIndex = new Map(storedPageIndexes.map((pageIndex) => [pageIndex.pageIndex, pageIndex.tokens]));
-  const documentFrequency = buildDocumentFrequency(
-    pages.map((page) => tokenByPageIndex.get(page.pageIndex) ?? tokenizeDocumentText(page.text)),
-  );
-  const vectorByPageIndex = new Map(
-    storedPageIndexes.map((pageIndex) => [pageIndex.pageIndex, fromStoredVector(pageIndex.vector)]),
-  );
+  const indexedPages: IndexedPage[] = [];
+  for (const page of pages) {
+    indexedPages.push({
+      ...page,
+      embedding: await getPageEmbedding(page, pageIndexes),
+    });
+  }
 
   return {
     pages,
-    documentFrequency,
     orama,
-    indexedPages: pages.map((page) => ({
-      ...page,
-      vector:
-        vectorByPageIndex.get(page.pageIndex) ??
-        applyInverseDocumentFrequency(
-          termFrequency(tokenByPageIndex.get(page.pageIndex) ?? []),
-          documentFrequency,
-          pages.length,
-        ),
-    })),
+    indexedPages,
   };
 }
 
@@ -245,12 +237,7 @@ export async function searchDocumentIndex(index: DocumentIndex, query: string): 
   const queryTokens = tokenizeDocumentText(query);
   if (queryTokens.length === 0) return null;
 
-  const queryVector = applyInverseDocumentFrequency(
-    termFrequency(queryTokens),
-    index.documentFrequency,
-    index.pages.length,
-  );
-
+  const queryEmbedding = await embedText(query);
   const fullTextResults = await searchOrama(index.orama, {
     term: query,
     properties: ['text'],
@@ -265,14 +252,14 @@ export async function searchDocumentIndex(index: DocumentIndex, query: string): 
   const maxKeywordScore = Math.max(...Array.from(keywordScores.values()), 1);
   const ranked = index.indexedPages
     .map((page) => {
-      const vectorScore = cosineSimilarity(page.vector, queryVector);
+      const semanticScore = cosineSimilarity(page.embedding, queryEmbedding);
       const keywordScore = (keywordScores.get(page.pageIndex) ?? 0) / maxKeywordScore;
-      const score = vectorScore * 0.65 + keywordScore * 0.35;
+      const score = semanticScore * 0.75 + keywordScore * 0.25;
 
       return {
-      ...page,
-      score,
-      highlights: extractHighlights(page.text, queryTokens),
+        ...page,
+        score,
+        highlights: extractHighlights(page.text, queryTokens),
       };
     })
     .sort((a, b) => b.score - a.score);

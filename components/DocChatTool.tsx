@@ -145,7 +145,7 @@ export default function DocChatTool() {
         throw new Error('没有从 PDF 中读取到可搜索文本，可能是扫描件或图片型 PDF。');
       }
 
-      const pageIndexes = createStoredPageIndexes(searchablePages);
+      const pageIndexes = await createStoredPageIndexes(searchablePages);
       const documentId = await saveDocumentToStore(file, searchablePages, pageIndexes);
 
       setIndex(await buildDocumentIndex(searchablePages, pageIndexes));
@@ -187,7 +187,7 @@ export default function DocChatTool() {
             </span>
             <h1 className="font-h1 text-h1 text-on-surface">Document Q&amp;A</h1>
             <p className="mt-sm font-body-md text-body-md text-on-surface-variant">
-              上传 PDF 后，使用 Dexie/IndexedDB 本地保存文档，用 Orama 全文搜索结合本地向量分数完成页级问答。
+              上传 PDF 后，使用 Transformers.js 生成语义向量并存入 IndexedDB，用 Orama 全文搜索结合 Embedding 相似度完成页级问答。
             </p>
           </div>
 
@@ -251,7 +251,7 @@ export default function DocChatTool() {
 
           <div className="mt-lg rounded-xl bg-surface-container-low p-md font-body-md text-body-md text-on-surface-variant">
             {status === 'idle' && '等待上传文档。'}
-            {status === 'reading' && '正在读取 PDF 页面并建立本地索引...'}
+            {status === 'reading' && '正在读取 PDF 页面，并用 MiniLM 生成本地语义向量...'}
             {status === 'loading' && '正在从 IndexedDB 恢复 PDF 和索引...'}
             {status === 'ready' && index && `索引完成并已本地保存：${index.pages.length} 页可搜索内容。`}
             {status === 'error' && error}

@@ -103,7 +103,7 @@ export async function loadSavedDocument(documentId: string): Promise<{
   return {
     document,
     pages: pages.map(({ pageIndex, text }) => ({ pageIndex, text })),
-    pageIndexes: pageIndexes.map(({ pageIndex, tokens, vector }) => ({ pageIndex, tokens, vector })),
+    pageIndexes: pageIndexes.map(({ pageIndex, tokens, embedding }) => ({ pageIndex, tokens, embedding })),
   };
 }
 
