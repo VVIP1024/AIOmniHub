@@ -8,8 +8,10 @@
         "start": "next start"
     },
     "dependencies": {
+        "@orama/orama": "^3.1.18",
         "@vercel/blob": "^2.3.3",
         "@vercel/edge-config": "^1.1.0",
+        "dexie": "^4.4.2",
         "gray-matter": "^4.0.3",
         "next": "^15.0.0",
         "next-themes": "^0.3.0",

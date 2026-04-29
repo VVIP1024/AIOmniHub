@@ -31,101 +31,45 @@ interface BlogFrontmatter {
   tags?: unknown;
 }
 
-function stripMarkdown(input: string): string {
-  return input
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function truncate(text: string, max: number): string {
-  if (text.length <= max) return text;
-  return `${text.slice(0, max - 1).trim()}…`;
-}
-
 function estimateReadTime(text: string): string {
   const words = text.split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(2, Math.min(12, Math.round(words / 300) || 2));
   return `${minutes} MIN READ`;
 }
 
-function toBlogAssetUrl(src: string): string {
-  if (src.startsWith('./')) return `/blog-assets/${src.slice(2)}`;
-  if (src.startsWith('Blog/')) return `/blog-assets/${src.slice(BLOG_PREFIX.length)}`;
-  return src;
-}
-
-function extractFirstImage(markdown: string): string | null {
-  const match = markdown.match(/!\[[^\]]*]\(([^)]+)\)/);
-  return match?.[1] ? toBlogAssetUrl(match[1].trim()) : null;
-}
-
-function extractSummaryBlock(lines: string[]): { summary: string | null; contentLines: string[] } {
-  const startIndex = lines.findIndex((line) => line.trim().startsWith('>'));
-  if (startIndex < 0) {
-    return { summary: null, contentLines: lines };
-  }
-
-  let endIndex = startIndex;
-  while (endIndex < lines.length && lines[endIndex].trim().startsWith('>')) {
-    endIndex += 1;
-  }
-
-  const summary = lines
-    .slice(startIndex, endIndex)
-    .map((line) => line.replace(/^>\s?/, '').trim())
-    .join(' ')
-    .trim();
-
-  return {
-    summary: summary || null,
-    contentLines: lines,
-  };
-}
-
 function toCleanString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-function toStringArray(value: unknown): string[] {
-  const rawValues = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
-  return rawValues
-    .map((item) => String(item).trim())
-    .filter(Boolean);
+function toFrontmatterStringArray(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  return value.map((item) => String(item).trim()).filter(Boolean);
 }
 
-function parsePost(slug: string, markdown: string, uploadedAt: Date): BlogPost {
+function parsePost(slug: string, markdown: string, uploadedAt: Date): BlogPost | null {
+  if (!markdown.trimStart().startsWith('---')) return null;
+
   const parsed = matter(markdown);
   const frontmatter = parsed.data as BlogFrontmatter;
   const body = parsed.content.trim();
-  const lines = body.split(/\r?\n/);
-  const titleLineIndex = lines.findIndex((line) => line.trim().startsWith('# '));
-  const title =
-    toCleanString(frontmatter.title) ??
-    (titleLineIndex >= 0 ? lines[titleLineIndex].replace(/^#\s+/, '').trim() : slug);
-  const { summary, contentLines } = extractSummaryBlock(lines);
-  const content = contentLines.join('\n').trim();
-  const firstParagraph = contentLines.find((line) => line.trim() && !line.trim().startsWith('#'));
-  const description = truncate(
-    stripMarkdown(toCleanString(frontmatter.description) ?? summary ?? firstParagraph ?? content),
-    180,
-  );
+  const title = toCleanString(frontmatter.title);
+  const description = toCleanString(frontmatter.description);
+  const keywords = toFrontmatterStringArray(frontmatter.keywords);
+  const tags = toFrontmatterStringArray(frontmatter.tags);
+
+  if (!title || !description || !keywords || !tags) return null;
 
   return {
     slug,
     title,
     description,
-    keywords: toStringArray(frontmatter.keywords),
-    tags: toStringArray(frontmatter.tags),
+    keywords,
+    tags,
     summary: description,
-    content,
-    image: extractFirstImage(content) ?? BLOG_IMAGE,
+    content: body,
+    image: BLOG_IMAGE,
     uploadedAt: uploadedAt.toISOString(),
-    readTime: estimateReadTime(content),
+    readTime: estimateReadTime(body),
   };
 }
 

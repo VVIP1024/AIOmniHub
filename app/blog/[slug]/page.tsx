@@ -16,15 +16,6 @@ interface BlogPostPageProps {
 
 export const dynamic = 'force-dynamic';
 
-function getBlogKeywords(title: string): string[] {
-  const titleKeywords = title
-    .split(/[\s:：,，、。！？?《》“”"()（）]+/)
-    .map((keyword) => keyword.trim())
-    .filter((keyword) => keyword.length > 1);
-
-  return Array.from(new Set([...titleKeywords, 'AI', '人工智能', 'AI 工具', 'AI 资讯']));
-}
-
 function escapeJsonLd(value: unknown): string {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
@@ -46,7 +37,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   return {
     title: post.title,
     description: post.description,
-    keywords: post.keywords.length > 0 ? post.keywords : getBlogKeywords(post.title),
+    keywords: post.keywords,
     authors: [{ name: 'Intellect & Insight' }],
     creator: 'Intellect & Insight',
     publisher: 'Intellect & Insight',

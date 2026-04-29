@@ -1,3 +1,5 @@
+import { create, insertMultiple, search } from '@orama/orama';
+
 export interface DocumentPage {
   pageIndex: number;
   text: string;
@@ -8,14 +10,32 @@ export interface PageSearchResult extends DocumentPage {
   highlights: string[];
 }
 
+export interface StoredPageIndex {
+  pageIndex: number;
+  tokens: string[];
+  vector: Array<[string, number]>;
+}
+
 interface IndexedPage extends DocumentPage {
   vector: Map<string, number>;
+}
+
+interface OramaSearchHit {
+  score: number;
+  document: {
+    pageIndex: number;
+  };
+}
+
+interface OramaSearchResult {
+  hits: OramaSearchHit[];
 }
 
 export interface DocumentIndex {
   pages: DocumentPage[];
   indexedPages: IndexedPage[];
   documentFrequency: Map<string, number>;
+  orama: unknown;
 }
 
 const TOKEN_PATTERN = /[a-z0-9]+|[\u4e00-\u9fff]/gi;
@@ -42,7 +62,12 @@ const STOP_WORDS = new Set([
   '可以',
 ]);
 
-function tokenize(text: string): string[] {
+const searchOrama = search as unknown as (
+  db: unknown,
+  params: { term: string; properties: string[]; limit: number },
+) => Promise<OramaSearchResult>;
+
+export function tokenizeDocumentText(text: string): string[] {
   const rawTokens = text.toLowerCase().match(TOKEN_PATTERN) ?? [];
   const tokens: string[] = [];
   let chineseBuffer = '';
@@ -147,26 +172,77 @@ function extractHighlights(text: string, queryTokens: string[]): string[] {
   return (matched.length > 0 ? matched : sentences).slice(0, 3);
 }
 
-export function buildDocumentIndex(pages: DocumentPage[]): DocumentIndex {
-  const pageTokens = pages.map((page) => tokenize(page.text));
+function toStoredVector(vector: Map<string, number>): Array<[string, number]> {
+  return Array.from(vector.entries());
+}
+
+function fromStoredVector(vector: Array<[string, number]>): Map<string, number> {
+  return new Map(vector);
+}
+
+export function createStoredPageIndexes(pages: DocumentPage[]): StoredPageIndex[] {
+  const pageTokens = pages.map((page) => tokenizeDocumentText(page.text));
   const documentFrequency = buildDocumentFrequency(pageTokens);
 
-  return {
-    pages,
-    documentFrequency,
-    indexedPages: pages.map((page, index) => ({
-      ...page,
-      vector: applyInverseDocumentFrequency(
+  return pages.map((page, index) => ({
+    pageIndex: page.pageIndex,
+    tokens: pageTokens[index] ?? [],
+    vector: toStoredVector(
+      applyInverseDocumentFrequency(
         termFrequency(pageTokens[index] ?? []),
         documentFrequency,
         pages.length,
       ),
+    ),
+  }));
+}
+
+export async function buildDocumentIndex(
+  pages: DocumentPage[],
+  storedPageIndexes = createStoredPageIndexes(pages),
+): Promise<DocumentIndex> {
+  const orama = await create({
+    schema: {
+      pageIndex: 'number',
+      text: 'string',
+    },
+  });
+
+  await insertMultiple(
+    orama,
+    pages.map((page) => ({
+      pageIndex: page.pageIndex,
+      text: page.text,
+    })),
+  );
+
+  const tokenByPageIndex = new Map(storedPageIndexes.map((pageIndex) => [pageIndex.pageIndex, pageIndex.tokens]));
+  const documentFrequency = buildDocumentFrequency(
+    pages.map((page) => tokenByPageIndex.get(page.pageIndex) ?? tokenizeDocumentText(page.text)),
+  );
+  const vectorByPageIndex = new Map(
+    storedPageIndexes.map((pageIndex) => [pageIndex.pageIndex, fromStoredVector(pageIndex.vector)]),
+  );
+
+  return {
+    pages,
+    documentFrequency,
+    orama,
+    indexedPages: pages.map((page) => ({
+      ...page,
+      vector:
+        vectorByPageIndex.get(page.pageIndex) ??
+        applyInverseDocumentFrequency(
+          termFrequency(tokenByPageIndex.get(page.pageIndex) ?? []),
+          documentFrequency,
+          pages.length,
+        ),
     })),
   };
 }
 
-export function searchDocumentIndex(index: DocumentIndex, query: string): PageSearchResult | null {
-  const queryTokens = tokenize(query);
+export async function searchDocumentIndex(index: DocumentIndex, query: string): Promise<PageSearchResult | null> {
+  const queryTokens = tokenizeDocumentText(query);
   if (queryTokens.length === 0) return null;
 
   const queryVector = applyInverseDocumentFrequency(
@@ -175,12 +251,30 @@ export function searchDocumentIndex(index: DocumentIndex, query: string): PageSe
     index.pages.length,
   );
 
+  const fullTextResults = await searchOrama(index.orama, {
+    term: query,
+    properties: ['text'],
+    limit: index.pages.length,
+  });
+  const keywordScores = new Map<number, number>();
+
+  for (const hit of fullTextResults.hits) {
+    keywordScores.set(hit.document.pageIndex, hit.score);
+  }
+
+  const maxKeywordScore = Math.max(...Array.from(keywordScores.values()), 1);
   const ranked = index.indexedPages
-    .map((page) => ({
+    .map((page) => {
+      const vectorScore = cosineSimilarity(page.vector, queryVector);
+      const keywordScore = (keywordScores.get(page.pageIndex) ?? 0) / maxKeywordScore;
+      const score = vectorScore * 0.65 + keywordScore * 0.35;
+
+      return {
       ...page,
-      score: cosineSimilarity(page.vector, queryVector),
+      score,
       highlights: extractHighlights(page.text, queryTokens),
-    }))
+      };
+    })
     .sort((a, b) => b.score - a.score);
 
   return ranked[0]?.score ? ranked[0] : null;
