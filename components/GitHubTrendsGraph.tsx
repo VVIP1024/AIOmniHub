@@ -336,15 +336,30 @@ export default function GitHubTrendsGraph() {
           if (!repo && node.url) window.open(node.url, '_blank', 'noreferrer');
         })
         .nodeCanvasObject((node: TrendNode & { x?: number; y?: number }, ctx: CanvasRenderingContext2D, globalScale: number) => {
-          const size = node.kind === 'repo' ? 7 : 5;
+          const size =
+            node.kind === 'language'
+              ? Math.min(24, Math.max(10, node.val / 1.8))
+              : node.kind === 'topic'
+                ? Math.min(14, Math.max(5, node.val / 1.7))
+                : node.kind === 'repo'
+                  ? 7
+                  : 5;
+
+          if (node.kind === 'language') {
+            ctx.beginPath();
+            ctx.arc(node.x ?? 0, node.y ?? 0, size + 10, 0, 2 * Math.PI, false);
+            ctx.fillStyle = 'rgba(217, 119, 6, 0.12)';
+            ctx.fill();
+          }
+
           ctx.beginPath();
           ctx.arc(node.x ?? 0, node.y ?? 0, size, 0, 2 * Math.PI, false);
           ctx.fillStyle = node.color;
           ctx.fill();
 
-          const label = node.name;
-          const fontSize = Math.max(10, 13 / globalScale);
-          ctx.font = `${fontSize}px Newsreader, serif`;
+          const label = node.kind === 'language' && node.count ? `${node.name} (${node.count})` : node.name;
+          const fontSize = node.kind === 'language' ? Math.max(12, 18 / globalScale) : Math.max(10, 13 / globalScale);
+          ctx.font = `${node.kind === 'language' ? '600 ' : ''}${fontSize}px Newsreader, serif`;
           ctx.fillStyle = '#1b1b1d';
           ctx.fillText(label, (node.x ?? 0) + size + 3, (node.y ?? 0) + 3);
         });
@@ -382,25 +397,37 @@ export default function GitHubTrendsGraph() {
         <span className="mb-sm inline-flex rounded-full bg-secondary-container/10 px-3 py-1 font-label-sm text-label-sm text-secondary-container">
           GITHUB 趋势导航仪
         </span>
-        <h1 className="font-h1 text-h1 text-on-surface">开源项目图谱雷达</h1>
-        <p className="mt-sm font-body-lg text-body-lg text-on-surface-variant">
-          直接在浏览器请求 GitHub Search API，把热门仓库拆成项目、作者、语言和 Topic 节点，观察趋势技术生态的连接关系。
-        </p>
+        <h1 className="font-h1 text-h1 text-on-surface">GitHub图谱雷达</h1>
       </div>
 
       <div className="grid grid-cols-1 gap-gutter lg:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="rounded-xl border border-outline-variant bg-surface-container-lowest p-lg">
           <form className="space-y-md" onSubmit={handleSubmit}>
             <label className="block">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">创建时间范围</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">聚合周期</span>
               <select
                 className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
                 value={days}
                 onChange={(event) => setDays(Number(event.target.value))}
               >
-                <option value={7}>最近 7 天</option>
-                <option value={30}>最近 30 天</option>
-                <option value={90}>最近 90 天</option>
+                <option value={7}>本周</option>
+                <option value={30}>本月</option>
+                <option value={90}>本季度</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="font-label-sm text-label-sm text-on-surface-variant">行业 / 主题聚合</span>
+              <select
+                className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+                value={industry}
+                onChange={(event) => setIndustry(event.target.value as IndustryKey)}
+              >
+                {Object.entries(INDUSTRY_PRESETS).map(([key, preset]) => (
+                  <option key={key} value={key}>
+                    {preset.label}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -475,13 +502,34 @@ export default function GitHubTrendsGraph() {
 
           {languageStats.length > 0 && (
             <div className="mt-lg">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">语言分布</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">语言簇</span>
               <div className="mt-sm space-y-sm">
                 {languageStats.map(([language, count]) => (
-                  <div key={language} className="flex items-center justify-between font-body-md text-body-md">
-                    <span>{language}</span>
-                    <span className="text-on-surface-variant">{count}</span>
+                  <div key={language}>
+                    <div className="mb-1 flex items-center justify-between font-body-md text-body-md">
+                      <span>{language}</span>
+                      <span className="text-on-surface-variant">{count}</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-surface-container">
+                      <div
+                        className="h-full rounded-full bg-[#d97706]"
+                        style={{ width: `${Math.max(12, (count / Math.max(languageStats[0]?.[1] ?? 1, 1)) * 100)}%` }}
+                      />
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {topicStats.length > 0 && (
+            <div className="mt-lg">
+              <span className="font-label-sm text-label-sm text-on-surface-variant">行业热点 Topic</span>
+              <div className="mt-sm flex flex-wrap gap-2">
+                {topicStats.map(([topic, count]) => (
+                  <span key={topic} className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
+                    {topic} · {count}
+                  </span>
                 ))}
               </div>
             </div>
