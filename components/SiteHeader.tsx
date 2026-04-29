@@ -30,14 +30,15 @@ function BookmarkIcon() {
   );
 }
 
-function getNavLinkClass(isActive: boolean, compact = false): string {
-  const base = compact
-    ? 'font-medium uppercase tracking-widest text-xs transition-all duration-200 ease-out'
-    : 'font-medium uppercase tracking-widest text-[15px] transition-colors';
+const BRAND_TITLE_CLASS =
+  'font-serif text-[28px] font-semibold leading-none tracking-tighter text-slate-900 dark:text-slate-50 md:text-[32px]';
+
+function getNavLinkClass(isActive: boolean): string {
+  const base = 'font-serif text-[14px] font-semibold leading-none tracking-tighter md:text-[16px]';
 
   return isActive
     ? `text-slate-900 dark:text-slate-50 font-bold border-b-2 border-slate-900 dark:border-slate-50 pb-1 ${base}`
-    : `text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 ${base}`;
+    : `text-slate-500 dark:text-slate-400 transition-colors hover:text-slate-900 dark:hover:text-slate-200 ${base}`;
 }
 
 export default function SiteHeader({ variant }: SiteHeaderProps) {
@@ -49,18 +50,18 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
     return (
       <nav className="bg-white dark:bg-slate-950 font-serif text-lg leading-relaxed full-width top-0 sticky z-50 border-b border-slate-100 dark:border-slate-800 flat no shadows">
         <div className="flex justify-between items-center max-w-7xl mx-auto px-8 py-6 w-full">
-          <div className="font-serif text-[28px] font-semibold leading-none tracking-tighter text-slate-900 dark:text-slate-50 md:text-[32px]">
+          <div className={BRAND_TITLE_CLASS}>
             智识洞察
           </div>
           <div className="hidden md:flex gap-8 items-center">
             <a
-              className={getNavLinkClass(isInsightsActive, true)}
+              className={getNavLinkClass(isInsightsActive)}
               href="/"
             >
               AI 洞察
             </a>
             <a
-              className={getNavLinkClass(isDocChatActive, true)}
+              className={getNavLinkClass(isDocChatActive)}
               href="/doc-chat"
             >
               文档问答
@@ -74,7 +75,7 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
   return (
     <header className="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-serif newsreader tracking-tight docked full-width top-0 border-b border-slate-200 dark:border-slate-800 flat no shadows sticky z-50">
       <div className="flex justify-between items-center w-full px-8 py-4 max-w-7xl mx-auto">
-        <div className="text-2xl font-semibold tracking-tighter text-slate-900 dark:text-slate-50 font-serif">
+        <div className={BRAND_TITLE_CLASS}>
           智识洞察
         </div>
         <nav className="hidden md:flex gap-8 items-center">
