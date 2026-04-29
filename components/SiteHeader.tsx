@@ -45,6 +45,7 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
   const pathname = usePathname();
   const isInsightsActive = pathname === '/' || pathname.startsWith('/blog') || pathname === '/details';
   const isDocChatActive = pathname.startsWith('/doc-chat');
+  const isGitHubTrendsActive = pathname.startsWith('/github-trends');
 
   if (variant === 'details') {
     return (
@@ -65,6 +66,12 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
               href="/doc-chat"
             >
               文档问答
+            </a>
+            <a
+              className={getNavLinkClass(isGitHubTrendsActive)}
+              href="/github-trends"
+            >
+              趋势图谱
             </a>
           </div>
         </div>
@@ -92,10 +99,10 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
             文档问答
           </a>
           <a
-            className={getNavLinkClass(false)}
-            href="#"
+            className={getNavLinkClass(isGitHubTrendsActive)}
+            href="/github-trends"
           >
-            网络
+            趋势图谱
           </a>
           <a
             className={getNavLinkClass(false)}
