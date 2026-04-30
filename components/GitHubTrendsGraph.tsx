@@ -5,10 +5,6 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 type NodeKind = 'repo' | 'user' | 'language' | 'topic';
 type IndustryKey = 'all' | 'ai' | 'agent' | 'rag' | 'skill' | 'web' | 'data';
-type GraphFilter =
-  | { type: 'all'; value: '' }
-  | { type: 'language'; value: string }
-  | { type: 'topic'; value: string };
 
 interface GitHubOwner {
   login: string;
@@ -263,21 +259,20 @@ export default function GitHubTrendsGraph() {
   const [limit, setLimit] = useState(30);
   const [repos, setRepos] = useState<GitHubRepository[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepository | null>(null);
-  const [status, setStatus] = useState('等待加载 GitHub 趋势数据。');
+  const [loadError, setLoadError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [graphFilter, setGraphFilter] = useState<GraphFilter>({ type: 'all', value: '' });
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
   const filteredRepos = useMemo(() => {
-    if (graphFilter.type === 'language') {
-      return repos.filter((repo) => repo.language === graphFilter.value);
-    }
+    return repos.filter((repo) => {
+      const matchesLanguage = selectedLanguages.length === 0 || (repo.language !== null && selectedLanguages.includes(repo.language));
+      const matchesTopic =
+        selectedTopics.length === 0 || selectedTopics.some((topic) => (repo.topics ?? []).includes(topic));
 
-    if (graphFilter.type === 'topic') {
-      return repos.filter((repo) => (repo.topics ?? []).includes(graphFilter.value));
-    }
-
-    return repos;
-  }, [graphFilter, repos]);
+      return matchesLanguage && matchesTopic;
+    });
+  }, [repos, selectedLanguages, selectedTopics]);
   const graphData = useMemo(() => buildTrendGraph(filteredRepos), [filteredRepos]);
   const languageStats = useMemo(() => {
     const counts = new Map<string, number>();
@@ -287,12 +282,15 @@ export default function GitHubTrendsGraph() {
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
   }, [repos]);
 
-  const activeFilterLabel =
-    graphFilter.type === 'language'
-      ? `语言：${graphFilter.value}`
-      : graphFilter.type === 'topic'
-        ? `Topic：${graphFilter.value}`
-        : '全部项目';
+  const hasGraphFilter = selectedLanguages.length > 0 || selectedTopics.length > 0;
+  const activeFilterLabel = hasGraphFilter
+    ? [
+        selectedLanguages.length > 0 ? `语言：${selectedLanguages.join('、')}` : '',
+        selectedTopics.length > 0 ? `Topic：${selectedTopics.join('、')}` : '',
+      ]
+        .filter(Boolean)
+        .join(' / ')
+    : '全部项目';
   const topicStats = useMemo(() => {
     const counts = new Map<string, number>();
     for (const repo of repos) {
@@ -305,21 +303,19 @@ export default function GitHubTrendsGraph() {
 
   async function loadTrends(force = false) {
     setIsLoading(true);
-    setStatus(force ? '正在刷新 GitHub 趋势数据...' : '正在加载 GitHub 趋势数据...');
+    setLoadError('');
 
     try {
       const result = await fetchTrendingRepositories(days, minStars, limit, industry, force);
       setRepos(result.repos);
       setSelectedRepo(result.repos[0] ?? null);
-      setGraphFilter({ type: 'all', value: '' });
-      const rangeLabel = days === 7 ? '本周' : days === 30 ? '本月' : '本季度';
-      setStatus(
-        result.fromCache
-          ? `已从 localStorage 缓存恢复 ${rangeLabel} · ${INDUSTRY_PRESETS[industry].label} 数据。`
-          : `已从 GitHub API 获取 ${rangeLabel} · ${INDUSTRY_PRESETS[industry].label} 趋势数据。`,
-      );
+      setSelectedLanguages([]);
+      setSelectedTopics([]);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'GitHub 趋势数据加载失败。');
+      console.error('Error loading GitHub trends:', error);
+      setRepos([]);
+      setSelectedRepo(null);
+      setLoadError(error instanceof Error ? error.message : '加载失败');
     } finally {
       setIsLoading(false);
     }
@@ -333,14 +329,20 @@ export default function GitHubTrendsGraph() {
     let isMounted = true;
 
     async function renderGraph() {
-      if (!containerRef.current || graphData.nodes.length === 0) return;
+      if (!containerRef.current) return;
+      if (graphData.nodes.length === 0) {
+        graphRef.current?._destructor?.();
+        graphRef.current = null;
+        return;
+      }
+
       const { default: rawForceGraph } = await import('force-graph');
       const ForceGraph = rawForceGraph as unknown as ForceGraphFactory;
       if (!isMounted || !containerRef.current) return;
 
       graphRef.current?._destructor?.();
       const width = containerRef.current.clientWidth || 720;
-      const height = 680;
+      const height = 760;
       const graph = ForceGraph()(containerRef.current)
         .width(width)
         .height(height)
@@ -403,7 +405,7 @@ export default function GitHubTrendsGraph() {
     function handleResize() {
       if (!containerRef.current || !graphRef.current) return;
       graphRef.current.width(containerRef.current.clientWidth || 720);
-      graphRef.current.height(680);
+      graphRef.current.height(760);
     }
 
     window.addEventListener('resize', handleResize);
@@ -415,154 +417,132 @@ export default function GitHubTrendsGraph() {
     void loadTrends(true);
   }
 
+  function toggleLanguage(language: string) {
+    setSelectedLanguages((current) =>
+      current.includes(language) ? current.filter((item) => item !== language) : [...current, language],
+    );
+  }
+
+  function toggleTopic(topic: string) {
+    setSelectedTopics((current) =>
+      current.includes(topic) ? current.filter((item) => item !== topic) : [...current, topic],
+    );
+  }
+
+  function clearGraphFilters() {
+    setSelectedLanguages([]);
+    setSelectedTopics([]);
+  }
+
   return (
     <section className="max-w-container-max mx-auto px-gutter py-xxl">
-      <div className="mb-xl max-w-[820px]">
-        <span className="mb-sm inline-flex rounded-full bg-secondary-container/10 px-3 py-1 font-label-sm text-label-sm text-secondary-container">
-          GITHUB 趋势导航仪
-        </span>
+      <div className="mb-lg max-w-[820px]">
         <h1 className="font-h1 text-h1 text-on-surface">GitHub图谱雷达</h1>
       </div>
 
-      <div className="grid grid-cols-1 gap-gutter lg:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="rounded-xl border border-outline-variant bg-surface-container-lowest p-lg">
-          <form className="space-y-md" onSubmit={handleSubmit}>
-            <label className="block">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">聚合周期</span>
-              <select
-                className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
-                value={days}
-                onChange={(event) => setDays(Number(event.target.value))}
+      <form
+        className="mb-gutter grid grid-cols-1 items-end gap-md rounded-xl border border-outline-variant bg-surface-container-lowest p-md md:grid-cols-5"
+        onSubmit={handleSubmit}
+      >
+        <label className="block">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">聚合周期</span>
+          <select
+            className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+            value={days}
+            onChange={(event) => setDays(Number(event.target.value))}
+          >
+            <option value={7}>本周</option>
+            <option value={30}>本月</option>
+            <option value={90}>本季度</option>
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">行业 / 主题聚合</span>
+          <select
+            className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+            value={industry}
+            onChange={(event) => setIndustry(event.target.value as IndustryKey)}
+          >
+            {Object.entries(INDUSTRY_PRESETS).map(([key, preset]) => (
+              <option key={key} value={key}>
+                {preset.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">最低 Stars</span>
+          <input
+            className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+            min={0}
+            step={50}
+            type="number"
+            value={minStars}
+            onChange={(event) => setMinStars(Number(event.target.value))}
+          />
+        </label>
+
+        <label className="block">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">返回项目数</span>
+          <input
+            className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+            max={100}
+            min={1}
+            step={1}
+            type="number"
+            value={limit}
+            onChange={(event) => setLimit(Math.min(100, Math.max(1, Number(event.target.value))))}
+          />
+        </label>
+
+        <button
+          className="rounded-xl bg-primary px-5 py-3 font-nav-link text-nav-link text-on-primary transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isLoading}
+          type="submit"
+        >
+          {isLoading ? '加载中...' : '刷新趋势图谱'}
+        </button>
+      </form>
+
+      <div className="relative overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
+        <div ref={containerRef} className="h-[760px] w-full" />
+
+        <div className="absolute left-md top-md z-10 max-h-[700px] w-[320px] overflow-y-auto rounded-xl border border-outline-variant bg-white/90 p-md shadow-lg backdrop-blur-md">
+          <div className="mb-md flex items-start justify-between gap-sm">
+            <div>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">图谱过滤</span>
+              <p className="mt-xs font-body-md text-body-md text-on-surface">{activeFilterLabel}</p>
+              <p className="font-label-sm text-label-sm text-on-surface-variant">
+                展示 {filteredRepos.length} / {repos.length} 个项目
+              </p>
+            </div>
+            {hasGraphFilter && (
+              <button
+                className="border-0 bg-transparent p-0 font-label-sm text-label-sm text-secondary-container underline-offset-4 hover:underline"
+                type="button"
+                onClick={clearGraphFilters}
               >
-                <option value={7}>本周</option>
-                <option value={30}>本月</option>
-                <option value={90}>本季度</option>
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">行业 / 主题聚合</span>
-              <select
-                className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
-                value={industry}
-                onChange={(event) => setIndustry(event.target.value as IndustryKey)}
-              >
-                {Object.entries(INDUSTRY_PRESETS).map(([key, preset]) => (
-                  <option key={key} value={key}>
-                    {preset.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">最低 Stars</span>
-              <input
-                className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
-                min={0}
-                step={50}
-                type="number"
-                value={minStars}
-                onChange={(event) => setMinStars(Number(event.target.value))}
-              />
-            </label>
-
-            <label className="block">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">返回项目数</span>
-              <input
-                className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
-                max={100}
-                min={1}
-                step={1}
-                type="number"
-                value={limit}
-                onChange={(event) => setLimit(Math.min(100, Math.max(1, Number(event.target.value))))}
-              />
-              <span className="mt-xs block font-label-sm text-label-sm text-on-surface-variant">
-                GitHub Search API 单页最多返回 100 个项目
-              </span>
-            </label>
-
-            <button
-              className="w-full rounded-xl bg-primary px-5 py-3 font-nav-link text-nav-link text-on-primary transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={isLoading}
-              type="submit"
-            >
-              {isLoading ? '加载中...' : '刷新趋势图谱'}
-            </button>
-          </form>
-
-          <div className="mt-lg rounded-xl bg-surface-container-low p-md font-body-md text-body-md text-on-surface-variant">
-            {status}
+                清除
+              </button>
+            )}
           </div>
 
-          {repos.length > 0 && (
-            <div className="mt-lg rounded-xl border border-outline-variant bg-white p-md">
-              <div className="flex items-center justify-between gap-sm">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">当前图谱过滤</span>
-                {graphFilter.type !== 'all' && (
-                  <button
-                    className="border-0 bg-transparent p-0 font-label-sm text-label-sm text-secondary-container underline-offset-4 hover:underline"
-                    type="button"
-                    onClick={() => setGraphFilter({ type: 'all', value: '' })}
-                  >
-                    清除
-                  </button>
-                )}
-              </div>
-              <p className="mt-xs font-body-md text-body-md text-on-surface">
-                {activeFilterLabel}
-              </p>
-              <p className="mt-xs font-label-sm text-label-sm text-on-surface-variant">
-                右侧展示 {filteredRepos.length} / {repos.length} 个项目
-              </p>
-            </div>
-          )}
-
-          {selectedRepo && (
-            <div className="mt-lg rounded-xl border border-outline-variant bg-white p-md">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">当前项目</span>
-              <a
-                className="mt-md inline-flex font-nav-link text-nav-link text-secondary-container underline-offset-4 hover:underline"
-                href={selectedRepo.html_url}
-                rel="noreferrer"
-                target="_blank"
-              >
-              <h2 className="mt-xs font-h3 text-h3 text-on-surface">{selectedRepo.full_name}</h2>
-              </a>
-              <p className="mt-sm font-body-md text-body-md text-on-surface-variant">
-                {selectedRepo.description || '暂无描述'}
-              </p>
-              <div className="mt-md flex flex-wrap gap-2">
-                <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
-                  ★ {compactNumber(selectedRepo.stargazers_count)}
-                </span>
-                <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
-                  Fork {compactNumber(selectedRepo.forks_count)}
-                </span>
-                {selectedRepo.language && (
-                  <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
-                    {selectedRepo.language}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
           {languageStats.length > 0 && (
-            <div className="mt-lg">
+            <div>
               <span className="font-label-sm text-label-sm text-on-surface-variant">语言簇</span>
               <div className="mt-sm space-y-sm">
                 {languageStats.map(([language, count]) => (
                   <button
                     key={language}
                     className={`block w-full rounded-xl border p-sm text-left transition-colors ${
-                      graphFilter.type === 'language' && graphFilter.value === language
+                      selectedLanguages.includes(language)
                         ? 'border-[#d97706] bg-[#d97706]/10'
                         : 'border-transparent hover:border-outline-variant hover:bg-surface-container-low'
                     }`}
                     type="button"
-                    onClick={() => setGraphFilter({ type: 'language', value: language })}
+                    onClick={() => toggleLanguage(language)}
                   >
                     <div className="mb-1 flex items-center justify-between font-body-md text-body-md">
                       <span>{language}</span>
@@ -588,12 +568,12 @@ export default function GitHubTrendsGraph() {
                   <button
                     key={topic}
                     className={`rounded-full border px-3 py-1 font-label-sm text-label-sm transition-colors ${
-                      graphFilter.type === 'topic' && graphFilter.value === topic
+                      selectedTopics.includes(topic)
                         ? 'border-[#059669] bg-[#059669]/10 text-on-surface'
                         : 'border-transparent bg-surface-container hover:border-outline-variant'
                     }`}
                     type="button"
-                    onClick={() => setGraphFilter({ type: 'topic', value: topic })}
+                    onClick={() => toggleTopic(topic)}
                   >
                     {topic} · {count}
                   </button>
@@ -601,11 +581,62 @@ export default function GitHubTrendsGraph() {
               </div>
             </div>
           )}
-        </aside>
-
-        <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
-          <div ref={containerRef} className="h-[680px] w-full" />
         </div>
+
+        {selectedRepo && (
+          <div className="absolute bottom-md right-md z-10 w-[360px] rounded-xl border border-outline-variant bg-white/90 p-md shadow-lg backdrop-blur-md">
+            <span className="font-label-sm text-label-sm text-on-surface-variant">当前项目</span>
+            <a
+              className="mt-xs block font-h3 text-h3 text-on-surface underline-offset-4 hover:underline"
+              href={selectedRepo.html_url}
+              rel="noreferrer"
+              target="_blank"
+            >
+              {selectedRepo.full_name}
+            </a>
+            <p className="mt-sm line-clamp-3 font-body-md text-body-md text-on-surface-variant">
+              {selectedRepo.description || '暂无描述'}
+            </p>
+            <div className="mt-md flex flex-wrap gap-2">
+              <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
+                ★ {compactNumber(selectedRepo.stargazers_count)}
+              </span>
+              <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
+                Fork {compactNumber(selectedRepo.forks_count)}
+              </span>
+              {selectedRepo.language && (
+                <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
+                  {selectedRepo.language}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-sm">
+            <div className="rounded-full border border-outline-variant bg-white px-5 py-3 font-nav-link text-nav-link text-on-surface shadow-lg">
+              加载中...
+            </div>
+          </div>
+        )}
+
+        {loadError && !isLoading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+            <div className="rounded-xl border border-error-container bg-white p-lg text-center shadow-lg">
+              <h2 className="font-h3 text-h3 text-error">加载失败</h2>
+              <p className="mt-sm max-w-[420px] font-body-md text-body-md text-on-surface-variant">{loadError}</p>
+            </div>
+          </div>
+        )}
+
+        {!loadError && !isLoading && repos.length === 0 && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <div className="rounded-xl border border-outline-variant bg-white/90 p-lg text-center shadow-lg">
+              <p className="font-body-lg text-body-lg text-on-surface-variant">点击上方按钮加载 GitHub 趋势图谱</p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
