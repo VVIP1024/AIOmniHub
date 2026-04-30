@@ -71,7 +71,7 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
               className={getNavLinkClass(isGitHubTrendsActive)}
               href="/github-trends"
             >
-              GitHub图谱
+              GitHub雷达
             </a>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function SiteHeader({ variant }: SiteHeaderProps) {
             className={getNavLinkClass(isGitHubTrendsActive)}
             href="/github-trends"
           >
-            GitHub图谱
+            GitHub雷达
           </a>
           <a
             className={getNavLinkClass(false)}

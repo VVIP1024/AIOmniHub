@@ -5,6 +5,10 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 type NodeKind = 'repo' | 'user' | 'language' | 'topic';
 type IndustryKey = 'all' | 'ai' | 'agent' | 'rag' | 'skill' | 'web' | 'data';
+type GraphFilter =
+  | { type: 'all'; value: '' }
+  | { type: 'language'; value: string }
+  | { type: 'topic'; value: string };
 
 interface GitHubOwner {
   login: string;
@@ -261,8 +265,20 @@ export default function GitHubTrendsGraph() {
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepository | null>(null);
   const [status, setStatus] = useState('等待加载 GitHub 趋势数据。');
   const [isLoading, setIsLoading] = useState(false);
+  const [graphFilter, setGraphFilter] = useState<GraphFilter>({ type: 'all', value: '' });
 
-  const graphData = useMemo(() => buildTrendGraph(repos), [repos]);
+  const filteredRepos = useMemo(() => {
+    if (graphFilter.type === 'language') {
+      return repos.filter((repo) => repo.language === graphFilter.value);
+    }
+
+    if (graphFilter.type === 'topic') {
+      return repos.filter((repo) => (repo.topics ?? []).includes(graphFilter.value));
+    }
+
+    return repos;
+  }, [graphFilter, repos]);
+  const graphData = useMemo(() => buildTrendGraph(filteredRepos), [filteredRepos]);
   const languageStats = useMemo(() => {
     const counts = new Map<string, number>();
     for (const repo of repos) {
@@ -270,6 +286,13 @@ export default function GitHubTrendsGraph() {
     }
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
   }, [repos]);
+
+  const activeFilterLabel =
+    graphFilter.type === 'language'
+      ? `语言：${graphFilter.value}`
+      : graphFilter.type === 'topic'
+        ? `Topic：${graphFilter.value}`
+        : '全部项目';
   const topicStats = useMemo(() => {
     const counts = new Map<string, number>();
     for (const repo of repos) {
@@ -288,6 +311,7 @@ export default function GitHubTrendsGraph() {
       const result = await fetchTrendingRepositories(days, minStars, limit, industry, force);
       setRepos(result.repos);
       setSelectedRepo(result.repos[0] ?? null);
+      setGraphFilter({ type: 'all', value: '' });
       const rangeLabel = days === 7 ? '本周' : days === 30 ? '本月' : '本季度';
       setStatus(
         result.fromCache
@@ -331,7 +355,7 @@ export default function GitHubTrendsGraph() {
         .linkDirectionalArrowRelPos(1)
         .linkColor(() => 'rgba(69, 70, 77, 0.22)')
         .onNodeClick((node: TrendNode) => {
-          const repo = repos.find((item) => `repo:${item.full_name}` === node.id);
+          const repo = filteredRepos.find((item) => `repo:${item.full_name}` === node.id);
           if (repo) setSelectedRepo(repo);
           if (!repo && node.url) window.open(node.url, '_blank', 'noreferrer');
         })
@@ -373,7 +397,7 @@ export default function GitHubTrendsGraph() {
       isMounted = false;
       graphRef.current?._destructor?.();
     };
-  }, [graphData, repos]);
+  }, [filteredRepos, graphData]);
 
   useEffect(() => {
     function handleResize() {
@@ -472,10 +496,40 @@ export default function GitHubTrendsGraph() {
             {status}
           </div>
 
+          {repos.length > 0 && (
+            <div className="mt-lg rounded-xl border border-outline-variant bg-white p-md">
+              <div className="flex items-center justify-between gap-sm">
+                <span className="font-label-sm text-label-sm text-on-surface-variant">当前图谱过滤</span>
+                {graphFilter.type !== 'all' && (
+                  <button
+                    className="border-0 bg-transparent p-0 font-label-sm text-label-sm text-secondary-container underline-offset-4 hover:underline"
+                    type="button"
+                    onClick={() => setGraphFilter({ type: 'all', value: '' })}
+                  >
+                    清除
+                  </button>
+                )}
+              </div>
+              <p className="mt-xs font-body-md text-body-md text-on-surface">
+                {activeFilterLabel}
+              </p>
+              <p className="mt-xs font-label-sm text-label-sm text-on-surface-variant">
+                右侧展示 {filteredRepos.length} / {repos.length} 个项目
+              </p>
+            </div>
+          )}
+
           {selectedRepo && (
             <div className="mt-lg rounded-xl border border-outline-variant bg-white p-md">
               <span className="font-label-sm text-label-sm text-on-surface-variant">当前项目</span>
+              <a
+                className="mt-md inline-flex font-nav-link text-nav-link text-secondary-container underline-offset-4 hover:underline"
+                href={selectedRepo.html_url}
+                rel="noreferrer"
+                target="_blank"
+              >
               <h2 className="mt-xs font-h3 text-h3 text-on-surface">{selectedRepo.full_name}</h2>
+              </a>
               <p className="mt-sm font-body-md text-body-md text-on-surface-variant">
                 {selectedRepo.description || '暂无描述'}
               </p>
@@ -492,14 +546,6 @@ export default function GitHubTrendsGraph() {
                   </span>
                 )}
               </div>
-              <a
-                className="mt-md inline-flex font-nav-link text-nav-link text-secondary-container underline-offset-4 hover:underline"
-                href={selectedRepo.html_url}
-                rel="noreferrer"
-                target="_blank"
-              >
-                打开 GitHub
-              </a>
             </div>
           )}
 
@@ -508,7 +554,16 @@ export default function GitHubTrendsGraph() {
               <span className="font-label-sm text-label-sm text-on-surface-variant">语言簇</span>
               <div className="mt-sm space-y-sm">
                 {languageStats.map(([language, count]) => (
-                  <div key={language}>
+                  <button
+                    key={language}
+                    className={`block w-full rounded-xl border p-sm text-left transition-colors ${
+                      graphFilter.type === 'language' && graphFilter.value === language
+                        ? 'border-[#d97706] bg-[#d97706]/10'
+                        : 'border-transparent hover:border-outline-variant hover:bg-surface-container-low'
+                    }`}
+                    type="button"
+                    onClick={() => setGraphFilter({ type: 'language', value: language })}
+                  >
                     <div className="mb-1 flex items-center justify-between font-body-md text-body-md">
                       <span>{language}</span>
                       <span className="text-on-surface-variant">{count}</span>
@@ -519,7 +574,7 @@ export default function GitHubTrendsGraph() {
                         style={{ width: `${Math.max(12, (count / Math.max(languageStats[0]?.[1] ?? 1, 1)) * 100)}%` }}
                       />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -530,9 +585,18 @@ export default function GitHubTrendsGraph() {
               <span className="font-label-sm text-label-sm text-on-surface-variant">行业热点 Topic</span>
               <div className="mt-sm flex flex-wrap gap-2">
                 {topicStats.map(([topic, count]) => (
-                  <span key={topic} className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
+                  <button
+                    key={topic}
+                    className={`rounded-full border px-3 py-1 font-label-sm text-label-sm transition-colors ${
+                      graphFilter.type === 'topic' && graphFilter.value === topic
+                        ? 'border-[#059669] bg-[#059669]/10 text-on-surface'
+                        : 'border-transparent bg-surface-container hover:border-outline-variant'
+                    }`}
+                    type="button"
+                    onClick={() => setGraphFilter({ type: 'topic', value: topic })}
+                  >
                     {topic} · {count}
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>
