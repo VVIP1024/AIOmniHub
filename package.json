@@ -1,11 +1,19 @@
 {
-    "name": "all-in-ai",
+    "name": "ai-omni-hub",
     "version": "0.1.0",
     "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
     "scripts": {
-        "dev": "next dev",
-        "build": "next build",
-        "start": "next start"
+        "dev": "npm run dev --workspace @ai-omni-hub/web",
+        "build": "npm run build --workspace @ai-omni-hub/web",
+        "start": "npm run start --workspace @ai-omni-hub/web",
+        "dev:web": "npm run dev --workspace @ai-omni-hub/web",
+        "build:web": "npm run build --workspace @ai-omni-hub/web",
+        "start:web": "npm run start --workspace @ai-omni-hub/web",
+        "build:server": "npm run build --workspace @ai-omni-hub/server"
     },
     "dependencies": {
         "@orama/orama": "^3.1.18",
