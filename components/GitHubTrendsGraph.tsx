@@ -445,15 +445,18 @@ export default function GitHubTrendsGraph() {
 
             <label className="block">
               <span className="font-label-sm text-label-sm text-on-surface-variant">返回项目数</span>
-              <select
+              <input
                 className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+                max={100}
+                min={1}
+                step={1}
+                type="number"
                 value={limit}
-                onChange={(event) => setLimit(Number(event.target.value))}
-              >
-                <option value={20}>20</option>
-                <option value={30}>30</option>
-                <option value={50}>50</option>
-              </select>
+                onChange={(event) => setLimit(Math.min(100, Math.max(1, Number(event.target.value))))}
+              />
+              <span className="mt-xs block font-label-sm text-label-sm text-on-surface-variant">
+                GitHub Search API 单页最多返回 100 个项目
+              </span>
             </label>
 
             <button
