@@ -3,9 +3,5 @@ import { handleServerRoute } from '../../_server';
 export const dynamic = 'force-dynamic';
 
 export function GET(request: Request) {
-  return handleServerRoute(request, '/api/ai/chat/config');
-}
-
-export function POST(request: Request) {
   return handleServerRoute(request);
 }

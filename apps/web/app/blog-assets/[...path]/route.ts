@@ -1,6 +1,4 @@
-import path from 'path';
-import { notFound } from 'next/navigation';
-import { getBlogAsset } from '@/utils/blog';
+import { handleServerRoute } from '@/app/api/_server';
 
 interface BlogAssetRouteProps {
   params: Promise<{
@@ -8,35 +6,7 @@ interface BlogAssetRouteProps {
   }>;
 }
 
-const CONTENT_TYPES: Record<string, string> = {
-  '.gif': 'image/gif',
-  '.jpeg': 'image/jpeg',
-  '.jpg': 'image/jpeg',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-};
-
-export async function GET(_request: Request, { params }: BlogAssetRouteProps) {
+export async function GET(request: Request, { params }: BlogAssetRouteProps) {
   const { path: assetPath } = await params;
-  const requestedPath = assetPath.join('/');
-  const ext = path.extname(requestedPath).toLowerCase();
-  const contentType = CONTENT_TYPES[ext];
-
-  if (!contentType) {
-    notFound();
-  }
-
-  try {
-    const stream = await getBlogAsset(requestedPath);
-    if (!stream) notFound();
-
-    return new Response(stream, {
-      headers: {
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        'Content-Type': contentType,
-      },
-    });
-  } catch {
-    notFound();
-  }
+  return handleServerRoute(request, `/api/blog/assets/${assetPath.map(encodeURIComponent).join('/')}`);
 }

@@ -1,4 +1,4 @@
-import { handleServerRoute } from '../_server';
+import { handleServerRoute } from '../../../_server';
 
 export const dynamic = 'force-dynamic';
 
