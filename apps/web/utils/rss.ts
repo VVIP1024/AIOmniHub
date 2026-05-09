@@ -1,5 +1,7 @@
 import { get } from '@vercel/edge-config';
+import fs from 'fs/promises';
 import Parser from 'rss-parser';
+import { getLocalStoragePath, shouldUseVercelStorage } from '@/utils/storage-env';
 
 export type Category =
   | 'AI Strategy'
@@ -133,6 +135,21 @@ async function getSourcesFromEdgeConfig(): Promise<Record<RssCategory, FeedSourc
   }
 }
 
+async function getSourcesFromLocalEdgeConfig(): Promise<Record<RssCategory, FeedSource[]> | null> {
+  try {
+    const rawConfig = await fs.readFile(getLocalStoragePath('edge', 'config.json'), 'utf8');
+    const parsed = JSON.parse(rawConfig) as Record<string, unknown>;
+
+    return mapDashedSourceConfig(parsed) ?? mapCategorySourceConfig(parsed);
+  } catch {
+    return null;
+  }
+}
+
+async function getSourcesFromStorage(): Promise<Record<RssCategory, FeedSource[]> | null> {
+  return shouldUseVercelStorage() ? getSourcesFromEdgeConfig() : getSourcesFromLocalEdgeConfig();
+}
+
 function stripHtml(input: string): string {
   return input
     .replace(/<[^>]+>/g, ' ')
@@ -229,7 +246,7 @@ async function fetchCategoryInsights(
 }
 
 export async function getHomepageInsights(): Promise<HomepageInsights> {
-  const sources = await getSourcesFromEdgeConfig();
+  const sources = await getSourcesFromStorage();
   if (!sources) {
     const emptyInsights: HomepageInsights = {
       'AI Strategy': [],

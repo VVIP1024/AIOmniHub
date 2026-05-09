@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
   if (!post) {
     return {
-      title: 'Blog article not found',
+      title: '文章未找到 | AI Omni Hub',
     };
   }
 
@@ -38,9 +38,9 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     title: post.title,
     description: post.description,
     keywords: post.keywords,
-    authors: [{ name: 'Intellect & Insight' }],
-    creator: 'Intellect & Insight',
-    publisher: 'Intellect & Insight',
+    authors: [{ name: 'AI Omni Hub' }],
+    creator: 'AI Omni Hub',
+    publisher: 'AI Omni Hub',
     robots: {
       index: true,
       follow: true,
@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       title: post.title,
       description: post.description,
       url: canonicalUrl,
-      siteName: 'Intellect & Insight',
+      siteName: 'AI Omni Hub',
       type: 'article',
       publishedTime: post.uploadedAt,
       images: [
@@ -98,11 +98,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     dateModified: post.uploadedAt,
     author: {
       '@type': 'Organization',
-      name: 'Intellect & Insight',
+      name: 'AI Omni Hub',
     },
     publisher: {
       '@type': 'Organization',
-      name: 'Intellect & Insight',
+      name: 'AI Omni Hub',
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
@@ -121,12 +121,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             className="mb-8 inline-flex items-center gap-2 font-nav-link text-nav-link text-on-surface-variant transition-colors hover:text-primary"
           >
             <span aria-hidden="true">←</span>
-            Back to insights
+            返回情报流
           </Link>
 
           <div className="mb-12">
             <span className="inline-block bg-surface-container px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant mb-4">
-              BLOG
+              深度文章
             </span>
             <h1>{post.title}</h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant italic mb-0">

@@ -178,28 +178,37 @@ export default function DocChatTool() {
   }
 
   return (
-    <section className="max-w-container-max mx-auto px-gutter py-xxl">
-      <div className="grid grid-cols-1 gap-gutter lg:grid-cols-[420px_minmax(0,1fr)]">
-        <aside className="rounded-xl border border-outline-variant bg-surface-container-lowest p-lg">
+    <section className="bg-[#fbfaf6]">
+      <div className="mx-auto max-w-7xl px-4 py-xxl md:px-8">
+        <div className="mb-xl max-w-[820px]">
+          <span className="font-label-sm text-[11px] text-slate-500">文档阅读助手</span>
+          <h1 className="mt-sm font-h1 text-[48px] leading-tight text-slate-950 md:text-[60px]">文档智问</h1>
+          <p className="mt-md font-body-lg text-[20px] leading-9 text-slate-600">
+            上传 PDF 后围绕文档内容提问，用页级命中结果把答案直接落到原文位置。
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-gutter lg:grid-cols-[420px_minmax(0,1fr)]">
+        <aside className="rounded-lg border border-slate-200 bg-white p-lg shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
           <div className="mb-lg">
-            <span className="mb-sm inline-flex rounded-full bg-secondary-container/10 px-3 py-1 font-label-sm text-label-sm text-secondary-container">
-              LOCAL DOC CHAT
+            <span className="mb-sm inline-flex rounded-lg bg-[#ecf3ff] px-3 py-1 font-label-sm text-[11px] text-[#2170e4]">
+              PDF 阅读 · 智能定位
             </span>
-            <h1 className="font-h1 text-h1 text-on-surface">Document Q&amp;A</h1>
-            <p className="mt-sm font-body-md text-body-md text-on-surface-variant">
-              上传 PDF 后，使用 Transformers.js 生成语义向量并存入 IndexedDB，用 Orama 全文搜索结合 Embedding 相似度完成页级问答。
+            <h2 className="font-h2 text-[32px] leading-tight text-slate-950">本地文档工作台</h2>
+            <p className="mt-sm font-body-md text-[15px] leading-7 text-slate-600">
+              适合快速阅读白皮书、研究报告和产品说明文档。
             </p>
           </div>
 
-          <label className="block rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-lg text-center transition-colors hover:border-secondary-container">
+          <label className="block rounded-lg border border-dashed border-slate-300 bg-[#fbfaf6] p-lg text-center transition-colors hover:border-[#2170e4]">
             <input
               accept="application/pdf"
               className="sr-only"
               type="file"
               onChange={(event) => void handleFileChange(event.target.files?.[0])}
             />
-            <span className="block font-h3 text-h3 text-on-surface">Upload PDF</span>
-            <span className="mt-xs block font-body-md text-body-md text-on-surface-variant">
+            <span className="block font-h3 text-[24px] leading-tight text-slate-950">上传 PDF</span>
+            <span className="mt-xs block font-body-md text-[15px] leading-7 text-slate-600">
               {fileName || '选择一份可复制文本的 PDF 文档'}
             </span>
           </label>
@@ -207,21 +216,21 @@ export default function DocChatTool() {
           {savedDocuments.length > 0 && (
             <div className="mt-lg">
               <div className="mb-sm flex items-center justify-between">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">
-                  Saved locally
+                <span className="font-label-sm text-[11px] text-slate-500">
+                  本地文档
                 </span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">
-                  IndexedDB
+                <span className="font-label-sm text-[11px] text-slate-500">
+                  最近使用
                 </span>
               </div>
               <div className="space-y-sm">
                 {savedDocuments.map((document) => (
                   <div
                     key={document.id}
-                    className={`rounded-xl border p-sm ${
+                    className={`rounded-lg border p-sm ${
                       activeDocumentId === document.id
-                        ? 'border-secondary-container bg-secondary-container/5'
-                        : 'border-outline-variant bg-white'
+                        ? 'border-[#2170e4] bg-[#ecf3ff]'
+                        : 'border-slate-200 bg-white'
                     }`}
                   >
                     <button
@@ -229,19 +238,19 @@ export default function DocChatTool() {
                       type="button"
                       onClick={() => void activateSavedDocument(document.id)}
                     >
-                      <span className="block truncate font-nav-link text-nav-link text-on-surface">
+                      <span className="block truncate font-nav-link text-[14px] font-semibold text-slate-950">
                         {document.fileName}
                       </span>
-                      <span className="mt-1 block font-label-sm text-label-sm text-on-surface-variant">
-                        {document.pageCount} pages · {new Date(document.updatedAt).toLocaleDateString()}
+                      <span className="mt-1 block font-label-sm text-[11px] text-slate-500">
+                        {document.pageCount} 页 · {new Date(document.updatedAt).toLocaleDateString('zh-CN')}
                       </span>
                     </button>
                     <button
-                      className="mt-xs border-0 bg-transparent p-0 font-label-sm text-label-sm text-on-surface-variant underline-offset-4 hover:text-error hover:underline"
+                      className="mt-xs border-0 bg-transparent p-0 font-label-sm text-[11px] text-slate-500 underline-offset-4 hover:text-error hover:underline"
                       type="button"
                       onClick={() => void handleDeleteDocument(document.id)}
                     >
-                      Delete local copy
+                      删除本地副本
                     </button>
                   </div>
                 ))}
@@ -249,46 +258,46 @@ export default function DocChatTool() {
             </div>
           )}
 
-          <div className="mt-lg rounded-xl bg-surface-container-low p-md font-body-md text-body-md text-on-surface-variant">
+          <div className="mt-lg rounded-lg bg-[#f5f2ea] p-md font-body-md text-[15px] leading-7 text-slate-600">
             {status === 'idle' && '等待上传文档。'}
             {status === 'reading' && '正在读取 PDF 页面，并用 MiniLM 生成本地语义向量...'}
-            {status === 'loading' && '正在从 IndexedDB 恢复 PDF 和索引...'}
+            {status === 'loading' && '正在恢复文档和阅读进度...'}
             {status === 'ready' && index && `索引完成并已本地保存：${index.pages.length} 页可搜索内容。`}
             {status === 'error' && error}
           </div>
 
           <form className="mt-lg" onSubmit={handleAsk}>
-            <label className="font-label-sm text-label-sm text-on-surface-variant" htmlFor="doc-question">
-              Ask a question
+            <label className="font-label-sm text-[11px] text-slate-500" htmlFor="doc-question">
+              提问
             </label>
             <textarea
               id="doc-question"
-              className="mt-sm min-h-28 w-full resize-none rounded-xl border border-outline-variant bg-white p-md font-body-md text-body-md text-on-surface outline-none transition-colors focus:border-secondary-container"
+              className="mt-sm min-h-28 w-full resize-none rounded-lg border border-slate-200 bg-white p-md font-body-md text-[15px] leading-7 text-slate-950 outline-none transition-colors focus:border-[#2170e4]"
               disabled={!index}
               placeholder="例如：这份文档里如何描述 RAG 架构？"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
             <button
-              className="mt-md w-full rounded-xl bg-primary px-5 py-3 font-nav-link text-nav-link text-on-primary transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-md w-full rounded-lg bg-slate-950 px-5 py-3 font-nav-link text-[14px] font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
               disabled={!index || !query.trim() || isSearching}
               type="submit"
             >
-              {isSearching ? 'Searching...' : 'Find Best Page'}
+              {isSearching ? '检索中...' : '定位最佳页面'}
             </button>
           </form>
 
           {answer && (
-            <div className="mt-lg rounded-xl border border-outline-variant bg-white p-md">
+            <div className="mt-lg rounded-lg border border-slate-200 bg-white p-md">
               <div className="flex items-center justify-between gap-sm">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Best match</span>
-                <span className="rounded-full bg-secondary-container px-3 py-1 font-label-sm text-label-sm text-on-secondary">
-                  Page {answer.pageIndex + 1} · {formatScore(answer.score)}
+                <span className="font-label-sm text-[11px] text-slate-500">最佳命中</span>
+                <span className="rounded-lg bg-[#2170e4] px-3 py-1 font-label-sm text-[11px] text-white">
+                  第 {answer.pageIndex + 1} 页 · {formatScore(answer.score)}
                 </span>
               </div>
               <div className="mt-md space-y-sm">
                 {answer.highlights.map((highlight) => (
-                  <p key={highlight} className="font-body-md text-body-md text-on-surface-variant">
+                  <p key={highlight} className="font-body-md text-[15px] leading-7 text-slate-600">
                     {highlight}
                   </p>
                 ))}
@@ -297,7 +306,7 @@ export default function DocChatTool() {
           )}
         </aside>
 
-        <div className="min-h-[720px] overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
+        <div className="min-h-[720px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
           {viewerUrl ? (
             <iframe
               key={viewerUrl}
@@ -306,10 +315,11 @@ export default function DocChatTool() {
               title="PDF preview"
             />
           ) : (
-            <div className="flex h-[720px] items-center justify-center p-lg text-center font-body-lg text-body-lg text-on-surface-variant">
-              PDF preview will appear here after upload.
+            <div className="flex h-[720px] items-center justify-center p-lg text-center font-body-lg text-[20px] leading-9 text-slate-500">
+              上传后将在这里预览 PDF 原文。
             </div>
           )}
+        </div>
         </div>
       </div>
     </section>

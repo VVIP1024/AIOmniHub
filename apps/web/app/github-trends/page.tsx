@@ -4,7 +4,7 @@ import SiteHeader from '@/components/SiteHeader';
 import GitHubTrendsGraph from '@/features/github-trends/GitHubTrendsGraph';
 
 export const metadata: Metadata = {
-  title: 'GitHub 趋势导航仪',
+  title: '开源雷达 | AI Omni Hub',
   description: '在浏览器中搜索 GitHub 热门仓库，并用图谱展示项目、作者、语言和标签关系。',
 };
 

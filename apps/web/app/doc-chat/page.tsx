@@ -4,8 +4,8 @@ import SiteHeader from '@/components/SiteHeader';
 import DocChatTool from '@/features/doc-chat/DocChatTool';
 
 export const metadata: Metadata = {
-  title: 'Document Q&A',
-  description: 'Upload a PDF and ask questions against local page-level document search.',
+  title: '文档智问 | AI Omni Hub',
+  description: '上传 PDF，围绕文档内容提问并定位答案所在页面。',
 };
 
 export default function DocChatPage() {

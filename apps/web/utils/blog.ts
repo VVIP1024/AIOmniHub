@@ -1,8 +1,13 @@
 import { get as getBlob, list } from '@vercel/blob';
+import fs from 'fs/promises';
 import matter from 'gray-matter';
+import path from 'path';
 import type { CategoryInsight } from '@/utils/rss';
+import { getLocalStoragePath, shouldUseVercelStorage } from '@/utils/storage-env';
 
-const BLOG_PREFIX = 'Blog/';
+const VERCEL_BLOG_PREFIX = 'Blog/';
+const LOCAL_BLOG_DIR = 'Blob';
+const LOCAL_BLOG_PREFIX = `${LOCAL_BLOG_DIR}/`;
 const BLOG_IMAGE =
   'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1600&q=80';
 
@@ -21,6 +26,7 @@ export interface BlogPost {
 
 interface BlogMarkdownBlob {
   pathname: string;
+  prefix: string;
   uploadedAt: Date;
 }
 
@@ -74,6 +80,10 @@ function parsePost(slug: string, markdown: string, uploadedAt: Date): BlogPost |
 }
 
 async function readBlobText(pathname: string): Promise<string | null> {
+  if (!shouldUseVercelStorage()) {
+    return readLocalBlobText(pathname);
+  }
+
   try {
     const blob = await getBlob(pathname, { access: 'private' });
     if (!blob?.stream) return null;
@@ -83,13 +93,63 @@ async function readBlobText(pathname: string): Promise<string | null> {
   }
 }
 
-async function listBlogMarkdownBlobs(): Promise<BlogMarkdownBlob[]> {
+function getLocalBlogRoot(): string {
+  return getLocalStoragePath('blob', LOCAL_BLOG_DIR);
+}
+
+function toLocalBlobPath(pathname: string): string {
+  const relativePathname = pathname.startsWith(LOCAL_BLOG_PREFIX)
+    ? pathname.slice(LOCAL_BLOG_PREFIX.length)
+    : pathname;
+
+  return path.join(getLocalBlogRoot(), relativePathname);
+}
+
+async function readLocalBlobText(pathname: string): Promise<string | null> {
+  try {
+    return await fs.readFile(toLocalBlobPath(pathname), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+async function listLocalBlogMarkdownBlobs(directory = getLocalBlogRoot()): Promise<BlogMarkdownBlob[]> {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
+  const markdownBlobs = await Promise.all(
+    entries.map(async (entry) => {
+      const entryPath = path.join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        return listLocalBlogMarkdownBlobs(entryPath);
+      }
+
+      if (!entry.isFile() || !entry.name.endsWith('.md')) {
+        return [];
+      }
+
+      const stat = await fs.stat(entryPath);
+      const relativePathname = path.relative(getLocalBlogRoot(), entryPath).split(path.sep).join('/');
+
+      return [
+        {
+          pathname: `${LOCAL_BLOG_PREFIX}${relativePathname}`,
+          prefix: LOCAL_BLOG_PREFIX,
+          uploadedAt: stat.mtime,
+        },
+      ];
+    }),
+  );
+
+  return markdownBlobs.flat();
+}
+
+async function listVercelBlogMarkdownBlobs(): Promise<BlogMarkdownBlob[]> {
   const markdownBlobs: BlogMarkdownBlob[] = [];
   let cursor: string | undefined;
 
   do {
     const result = await list({
-      prefix: BLOG_PREFIX,
+      prefix: VERCEL_BLOG_PREFIX,
       limit: 1000,
       cursor,
     });
@@ -99,6 +159,7 @@ async function listBlogMarkdownBlobs(): Promise<BlogMarkdownBlob[]> {
         .filter((blob) => blob.pathname.endsWith('.md'))
         .map((blob) => ({
           pathname: blob.pathname,
+          prefix: VERCEL_BLOG_PREFIX,
           uploadedAt: blob.uploadedAt,
         })),
     );
@@ -109,13 +170,26 @@ async function listBlogMarkdownBlobs(): Promise<BlogMarkdownBlob[]> {
   return markdownBlobs.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
 }
 
+async function listBlogMarkdownBlobs(): Promise<BlogMarkdownBlob[]> {
+  if (!shouldUseVercelStorage()) {
+    try {
+      const markdownBlobs = await listLocalBlogMarkdownBlobs();
+      return markdownBlobs.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+    } catch {
+      return [];
+    }
+  }
+
+  return listVercelBlogMarkdownBlobs();
+}
+
 export async function getBlogPosts(): Promise<BlogPost[]> {
   try {
     const markdownBlobs = await listBlogMarkdownBlobs();
 
     const posts = await Promise.all(
       markdownBlobs.map(async (blob) => {
-        const slug = blob.pathname.replace(BLOG_PREFIX, '').replace(/\.md$/, '');
+        const slug = blob.pathname.replace(blob.prefix, '').replace(/\.md$/, '');
         const markdown = await readBlobText(blob.pathname);
         if (!markdown) return null;
         return parsePost(slug, markdown, blob.uploadedAt);
@@ -159,7 +233,12 @@ export async function getBlogAsset(pathname: string): Promise<ReadableStream<Uin
   if (!normalizedPathname) return null;
 
   try {
-    const blob = await getBlob(`${BLOG_PREFIX}${normalizedPathname}`, { access: 'private' });
+    if (!shouldUseVercelStorage()) {
+      const file = await fs.readFile(path.join(getLocalBlogRoot(), normalizedPathname));
+      return new Blob([file]).stream() as ReadableStream<Uint8Array>;
+    }
+
+    const blob = await getBlob(`${VERCEL_BLOG_PREFIX}${normalizedPathname}`, { access: 'private' });
     return blob?.stream ?? null;
   } catch {
     return null;

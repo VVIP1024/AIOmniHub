@@ -4,8 +4,8 @@ import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: 'AI Insights & Strategy',
-  description: 'AI insights, strategy analysis, and blog articles for emerging AI tools.',
+  title: 'AI Omni Hub',
+  description: '聚合 AI 资讯、深度解读和实用工具的轻量门户。',
   alternates: {
     canonical: '/',
   },
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className="light" lang="en">
+    <html className="light" lang="zh-CN">
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"

@@ -84,7 +84,7 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 const NODE_COLORS: Record<NodeKind, string> = {
   repo: '#111827',
   user: '#2170e4',
-  language: '#d97706',
+  language: '#c97814',
   topic: '#059669',
 };
 
@@ -321,7 +321,7 @@ export default function GitHubTrendsGraph() {
       const graph = ForceGraph()(containerRef.current)
         .width(width)
         .height(height)
-        .backgroundColor('#fcf8fa')
+        .backgroundColor('#fbfaf6')
         .graphData(graphData)
         .nodeId('id')
         .nodeVal('val')
@@ -349,7 +349,7 @@ export default function GitHubTrendsGraph() {
           if (node.kind === 'language') {
             ctx.beginPath();
             ctx.arc(node.x ?? 0, node.y ?? 0, size + 10, 0, 2 * Math.PI, false);
-            ctx.fillStyle = 'rgba(217, 119, 6, 0.12)';
+            ctx.fillStyle = 'rgba(201, 120, 20, 0.12)';
             ctx.fill();
           }
 
@@ -410,19 +410,24 @@ export default function GitHubTrendsGraph() {
   }
 
   return (
-    <section className="max-w-container-max mx-auto px-gutter py-xxl">
-      <div className="mb-lg max-w-[820px]">
-        <h1 className="font-h1 text-h1 text-on-surface">GitHub图谱雷达</h1>
+    <section className="bg-[#fbfaf6]">
+      <div className="mx-auto max-w-7xl px-4 py-xxl md:px-8">
+      <div className="mb-xl max-w-[860px]">
+        <span className="font-label-sm text-[11px] text-slate-500">开源趋势</span>
+        <h1 className="mt-sm font-h1 text-[48px] leading-tight text-slate-950 md:text-[60px]">开源雷达</h1>
+        <p className="mt-md font-body-lg text-[20px] leading-9 text-slate-600">
+          搜索近期 GitHub 热门项目，把仓库、作者、语言和 Topic 关系压缩成一张可探索的趋势图谱。
+        </p>
       </div>
 
       <form
-        className="mb-gutter grid grid-cols-1 items-end gap-md rounded-xl border border-outline-variant bg-surface-container-lowest p-md md:grid-cols-5"
+        className="mb-gutter grid grid-cols-1 items-end gap-md rounded-lg border border-slate-200 bg-white p-md shadow-[0_18px_50px_rgba(15,23,42,0.06)] md:grid-cols-5"
         onSubmit={handleSubmit}
       >
         <label className="block">
-          <span className="font-label-sm text-label-sm text-on-surface-variant">聚合周期</span>
+          <span className="font-label-sm text-[11px] text-slate-500">聚合周期</span>
           <select
-            className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+            className="mt-xs w-full rounded-lg border border-slate-200 bg-white p-sm font-body-md text-[15px] leading-7 text-slate-950 outline-none focus:border-[#2170e4]"
             value={days}
             onChange={(event) => setDays(Number(event.target.value))}
           >
@@ -433,9 +438,9 @@ export default function GitHubTrendsGraph() {
         </label>
 
         <label className="block">
-          <span className="font-label-sm text-label-sm text-on-surface-variant">行业 / 主题聚合</span>
+          <span className="font-label-sm text-[11px] text-slate-500">行业 / 主题聚合</span>
           <select
-            className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+            className="mt-xs w-full rounded-lg border border-slate-200 bg-white p-sm font-body-md text-[15px] leading-7 text-slate-950 outline-none focus:border-[#2170e4]"
             value={industry}
             onChange={(event) => setIndustry(event.target.value as IndustryKey)}
           >
@@ -448,9 +453,9 @@ export default function GitHubTrendsGraph() {
         </label>
 
         <label className="block">
-          <span className="font-label-sm text-label-sm text-on-surface-variant">最低 Stars</span>
+          <span className="font-label-sm text-[11px] text-slate-500">最低 Stars</span>
           <input
-            className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+            className="mt-xs w-full rounded-lg border border-slate-200 bg-white p-sm font-body-md text-[15px] leading-7 text-slate-950 outline-none focus:border-[#2170e4]"
             min={0}
             step={50}
             type="number"
@@ -460,9 +465,9 @@ export default function GitHubTrendsGraph() {
         </label>
 
         <label className="block">
-          <span className="font-label-sm text-label-sm text-on-surface-variant">返回项目数</span>
+          <span className="font-label-sm text-[11px] text-slate-500">返回项目数</span>
           <input
-            className="mt-xs w-full rounded-xl border border-outline-variant bg-white p-sm font-body-md text-body-md"
+            className="mt-xs w-full rounded-lg border border-slate-200 bg-white p-sm font-body-md text-[15px] leading-7 text-slate-950 outline-none focus:border-[#2170e4]"
             max={100}
             min={1}
             step={1}
@@ -473,7 +478,7 @@ export default function GitHubTrendsGraph() {
         </label>
 
         <button
-          className="rounded-xl bg-primary px-5 py-3 font-nav-link text-nav-link text-on-primary transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-slate-950 px-5 py-3 font-nav-link text-[14px] font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoading}
           type="submit"
         >
@@ -481,21 +486,21 @@ export default function GitHubTrendsGraph() {
         </button>
       </form>
 
-      <div className="relative overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
+      <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
         <div ref={containerRef} className="h-[760px] w-full" />
 
-        <div className="absolute left-md top-md z-10 max-h-[700px] w-[320px] overflow-y-auto rounded-xl border border-outline-variant bg-white/90 p-md shadow-lg backdrop-blur-md">
+        <div className="absolute left-md top-md z-10 max-h-[700px] w-[calc(100%-2rem)] max-w-[320px] overflow-y-auto rounded-lg border border-slate-200 bg-white/95 p-md shadow-lg backdrop-blur-md">
           <div className="mb-md flex items-start justify-between gap-sm">
             <div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">图谱过滤</span>
-              <p className="mt-xs font-body-md text-body-md text-on-surface">{activeFilterLabel}</p>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">
+              <span className="font-label-sm text-[11px] text-slate-500">图谱过滤</span>
+              <p className="mt-xs font-body-md text-[15px] leading-7 text-slate-950">{activeFilterLabel}</p>
+              <p className="font-label-sm text-[11px] text-slate-500">
                 展示 {filteredRepos.length} / {repos.length} 个项目
               </p>
             </div>
             {hasGraphFilter && (
               <button
-                className="border-0 bg-transparent p-0 font-label-sm text-label-sm text-secondary-container underline-offset-4 hover:underline"
+                className="border-0 bg-transparent p-0 font-label-sm text-[11px] text-[#2170e4] underline-offset-4 hover:underline"
                 type="button"
                 onClick={clearGraphFilters}
               >
@@ -506,26 +511,26 @@ export default function GitHubTrendsGraph() {
 
           {languageStats.length > 0 && (
             <div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">语言簇</span>
+              <span className="font-label-sm text-[11px] text-slate-500">语言簇</span>
               <div className="mt-sm space-y-sm">
                 {languageStats.map(([language, count]) => (
                   <button
                     key={language}
-                    className={`block w-full rounded-xl border p-sm text-left transition-colors ${
+                    className={`block w-full rounded-lg border p-sm text-left transition-colors ${
                       selectedLanguages.includes(language)
-                        ? 'border-[#d97706] bg-[#d97706]/10'
-                        : 'border-transparent hover:border-outline-variant hover:bg-surface-container-low'
+                        ? 'border-[#c97814] bg-[#fff1dd]'
+                        : 'border-transparent hover:border-slate-200 hover:bg-[#fbfaf6]'
                     }`}
                     type="button"
                     onClick={() => toggleLanguage(language)}
                   >
-                    <div className="mb-1 flex items-center justify-between font-body-md text-body-md">
+                    <div className="mb-1 flex items-center justify-between font-body-md text-[15px] leading-7">
                       <span>{language}</span>
-                      <span className="text-on-surface-variant">{count}</span>
+                      <span className="text-slate-500">{count}</span>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-surface-container">
+                    <div className="h-1.5 overflow-hidden rounded-lg bg-slate-100">
                       <div
-                        className="h-full rounded-full bg-[#d97706]"
+                        className="h-full rounded-lg bg-[#c97814]"
                         style={{ width: `${Math.max(12, (count / Math.max(languageStats[0]?.[1] ?? 1, 1)) * 100)}%` }}
                       />
                     </div>
@@ -537,15 +542,15 @@ export default function GitHubTrendsGraph() {
 
           {topicStats.length > 0 && (
             <div className="mt-lg">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">行业热点 Topic</span>
+              <span className="font-label-sm text-[11px] text-slate-500">行业热点 Topic</span>
               <div className="mt-sm flex flex-wrap gap-2">
                 {topicStats.map(([topic, count]) => (
                   <button
                     key={topic}
-                    className={`rounded-full border px-3 py-1 font-label-sm text-label-sm transition-colors ${
+                    className={`rounded-lg border px-3 py-1 font-label-sm text-[11px] transition-colors ${
                       selectedTopics.includes(topic)
-                        ? 'border-[#059669] bg-[#059669]/10 text-on-surface'
-                        : 'border-transparent bg-surface-container hover:border-outline-variant'
+                        ? 'border-[#059669] bg-[#edf7f0] text-slate-950'
+                        : 'border-transparent bg-slate-100 hover:border-slate-200'
                     }`}
                     type="button"
                     onClick={() => toggleTopic(topic)}
@@ -559,28 +564,28 @@ export default function GitHubTrendsGraph() {
         </div>
 
         {selectedRepo && (
-          <div className="absolute bottom-md right-md z-10 w-[360px] rounded-xl border border-outline-variant bg-white/90 p-md shadow-lg backdrop-blur-md">
-            <span className="font-label-sm text-label-sm text-on-surface-variant">当前项目</span>
+          <div className="absolute bottom-md right-md z-10 w-[calc(100%-2rem)] max-w-[360px] rounded-lg border border-slate-200 bg-white/95 p-md shadow-lg backdrop-blur-md">
+            <span className="font-label-sm text-[11px] text-slate-500">当前项目</span>
             <a
-              className="mt-xs block font-h3 text-h3 text-on-surface underline-offset-4 hover:underline"
+              className="mt-xs block font-h3 text-[24px] leading-tight text-slate-950 underline-offset-4 hover:underline"
               href={selectedRepo.html_url}
               rel="noreferrer"
               target="_blank"
             >
               {selectedRepo.full_name}
             </a>
-            <p className="mt-sm line-clamp-3 font-body-md text-body-md text-on-surface-variant">
+            <p className="mt-sm line-clamp-3 font-body-md text-[15px] leading-7 text-slate-600">
               {selectedRepo.description || '暂无描述'}
             </p>
             <div className="mt-md flex flex-wrap gap-2">
-              <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
+              <span className="rounded-lg bg-slate-100 px-3 py-1 font-label-sm text-[11px]">
                 ★ {compactNumber(selectedRepo.stargazers_count)}
               </span>
-              <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
+              <span className="rounded-lg bg-slate-100 px-3 py-1 font-label-sm text-[11px]">
                 Fork {compactNumber(selectedRepo.forks_count)}
               </span>
               {selectedRepo.language && (
-                <span className="rounded-full bg-surface-container px-3 py-1 font-label-sm text-label-sm">
+                <span className="rounded-lg bg-slate-100 px-3 py-1 font-label-sm text-[11px]">
                   {selectedRepo.language}
                 </span>
               )}
@@ -590,7 +595,7 @@ export default function GitHubTrendsGraph() {
 
         {isLoading && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-sm">
-            <div className="rounded-full border border-outline-variant bg-white px-5 py-3 font-nav-link text-nav-link text-on-surface shadow-lg">
+            <div className="rounded-lg border border-slate-200 bg-white px-5 py-3 font-nav-link text-[14px] font-semibold text-slate-950 shadow-lg">
               加载中...
             </div>
           </div>
@@ -598,20 +603,21 @@ export default function GitHubTrendsGraph() {
 
         {loadError && !isLoading && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70 backdrop-blur-sm">
-            <div className="rounded-xl border border-error-container bg-white p-lg text-center shadow-lg">
-              <h2 className="font-h3 text-h3 text-error">加载失败</h2>
-              <p className="mt-sm max-w-[420px] font-body-md text-body-md text-on-surface-variant">{loadError}</p>
+            <div className="rounded-lg border border-error-container bg-white p-lg text-center shadow-lg">
+              <h2 className="font-h3 text-[24px] leading-tight text-error">加载失败</h2>
+              <p className="mt-sm max-w-[420px] font-body-md text-[15px] leading-7 text-slate-600">{loadError}</p>
             </div>
           </div>
         )}
 
         {!loadError && !isLoading && repos.length === 0 && (
           <div className="absolute inset-0 z-10 flex items-center justify-center">
-            <div className="rounded-xl border border-outline-variant bg-white/90 p-lg text-center shadow-lg">
-              <p className="font-body-lg text-body-lg text-on-surface-variant">点击上方按钮加载 GitHub 趋势图谱</p>
+            <div className="rounded-lg border border-slate-200 bg-white/90 p-lg text-center shadow-lg">
+              <p className="font-body-lg text-[20px] leading-9 text-slate-600">点击上方按钮加载 GitHub 趋势图谱</p>
             </div>
           </div>
         )}
+      </div>
       </div>
     </section>
   );

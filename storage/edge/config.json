@@ -1,0 +1,34 @@
+{
+    "AI-Strategy": [
+        {
+            "name": "OpenAI News",
+            "url": "https://openai.com/news/rss.xml"
+        },
+        {
+            "name": "Google News",
+            "url": "https://news.google.com/rss/search?q=enterprise+AI+strategy+Gemini&hl=en-US&gl=US&ceid=US:en"
+        }
+    ],
+    "Tech-Trends": [
+        {
+            "name": "AI Tech",
+            "url": "https://justlovemaki.github.io/CloudFlare-AI-Insight-Daily/rss.xml"
+        },
+        {
+            "name": "Git Repo",
+            "url": "https://wechat2rss.bestblogs.dev/feed/38be32e5376d852c13d3383e4d7a757fd9a55ff6.xml"
+        }
+    ],
+    "Policy-Regulation": [],
+    "Ethics-Governance": [],
+    "Research-Data": [
+        {
+            "name": "Google Research",
+            "url": "https://news.google.com/rss/search?q=AI+research+benchmark&hl=en-US&gl=US&ceid=US:en"
+        },
+        {
+            "name": "arXiv cs.AI",
+            "url": "http://export.arxiv.org/rss/cs.AI"
+        }
+    ]
+}

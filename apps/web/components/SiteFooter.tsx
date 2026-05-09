@@ -4,81 +4,47 @@ interface SiteFooterProps {
   variant: FooterVariant;
 }
 
-export default function SiteFooter({ variant }: SiteFooterProps) {
-  if (variant === 'details') {
-    return (
-      <footer className="bg-slate-50 dark:bg-slate-900 font-sans text-sm tracking-tight full-width py-12 mt-auto border-t border-slate-200 dark:border-slate-800 flat no shadows">
-        <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto px-8 w-full gap-4">
-          <div className="font-serif italic font-semibold text-lg text-slate-900 dark:text-slate-50">
-            ConsultAI
-          </div>
-          <div className="text-slate-500 dark:text-slate-400">
-            © 2024 ConsultAI Platform. Focused intelligence for the modern era.
-          </div>
-          <div className="flex gap-6">
-            <a
-              className="text-slate-500 dark:text-slate-400 hover:underline decoration-slate-300 underline-offset-4 transition-all duration-300"
-              href="#"
-            >
-              Privacy
-            </a>
-            <a
-              className="text-slate-500 dark:text-slate-400 hover:underline decoration-slate-300 underline-offset-4 transition-all duration-300"
-              href="#"
-            >
-              Terms
-            </a>
-            <a
-              className="text-slate-500 dark:text-slate-400 hover:underline decoration-slate-300 underline-offset-4 transition-all duration-300"
-              href="#"
-            >
-              Archive
-            </a>
-            <a
-              className="text-slate-500 dark:text-slate-400 hover:underline decoration-slate-300 underline-offset-4 transition-all duration-300"
-              href="#"
-            >
-              Contact
-            </a>
-          </div>
-        </div>
-      </footer>
-    );
-  }
+const footerLinks = [
+  { href: '/', label: '情报流' },
+  { href: '/#articles', label: '深度文章' },
+  { href: '/doc-chat', label: '文档智问' },
+  { href: '/github-trends', label: '开源雷达' },
+];
 
+export default function SiteFooter({ variant }: SiteFooterProps) {
   return (
-    <footer className="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans manrope text-sm full-width border-t mt-20 border-t border-slate-200 dark:border-slate-800 flat no shadows Transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-8 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="font-serif italic text-lg text-slate-900 dark:text-slate-50">Intellect &amp; Insight</div>
-        <nav className="flex flex-wrap justify-center gap-6">
-          <a
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline transition-colors"
-            href="#"
-          >
-            Privacy Policy
-          </a>
-          <a
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline transition-colors"
-            href="#"
-          >
-            Terms of Service
-          </a>
-          <a
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline transition-colors"
-            href="#"
-          >
-            Expert Network
-          </a>
-          <a
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline transition-colors"
-            href="#"
-          >
-            Contact
-          </a>
-        </nav>
-        <div className="text-slate-500 dark:text-slate-400 text-xs">
-          © 2024 Intellect &amp; Insight AI. All rights reserved.
+    <footer className="mt-auto border-t border-slate-200 bg-[#111827] text-white">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-lg px-4 py-xl md:grid-cols-[1fr_auto] md:px-8">
+        <div>
+          <div className="inline-flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white text-sm font-semibold text-slate-950">
+              AI
+            </span>
+            <span>
+              <span className="block font-serif text-[24px] font-semibold leading-none">Omni Hub</span>
+              <span className="mt-1 block font-label-sm text-[10px] uppercase leading-none tracking-[0.16em] text-slate-400">
+                AI News · Analysis · Tools
+              </span>
+            </span>
+          </div>
+          <p className="mt-md max-w-[520px] font-body-md text-[14px] leading-7 text-slate-300">
+            {variant === 'details'
+              ? '持续沉淀 AI 资讯、深度文章和实用工具，帮助研究与决策保持同一套上下文。'
+              : '面向 AI 研究、产品判断和技术选型的资讯门户。'}
+          </p>
         </div>
+
+        <nav className="flex flex-wrap items-start gap-2 md:justify-end" aria-label="页脚导航">
+          {footerLinks.map((link) => (
+            <a
+              key={link.href}
+              className="rounded-lg border border-white/10 px-3 py-2 font-nav-link text-[13px] font-semibold text-slate-300 transition-colors hover:border-white/25 hover:text-white"
+              href={link.href}
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
       </div>
     </footer>
   );
