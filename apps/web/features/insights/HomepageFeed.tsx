@@ -116,7 +116,7 @@ function TagList({ tags }: { tags?: string[] }) {
 
 function ArticleMeta({ item }: { item: CategoryInsight }) {
   return (
-    <div className="flex mb-md flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <span className="rounded-lg bg-slate-950 px-2.5 py-1 font-label-sm text-[11px] text-white">
         {getCategoryLabel(item.category)}
       </span>
