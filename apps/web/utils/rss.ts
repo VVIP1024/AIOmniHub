@@ -8,7 +8,7 @@ export const categoryOrder: Category[] = [
   'Tech Trends',
   'Policy & Regulation',
   'Ethics & Governance',
-  'Research & Data',
+  'Research',
 ];
 
 const dependencies = createServerDependencies();
@@ -30,7 +30,7 @@ export async function getHomepageInsights(): Promise<HomepageInsights> {
         'Tech Trends': [],
         'Policy & Regulation': [],
         'Ethics & Governance': [],
-        'Research & Data': [],
+        'Research': [],
         Blog: [],
       };
 }

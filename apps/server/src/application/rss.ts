@@ -14,8 +14,9 @@ export const categoryOrder: Category[] = [
   'Tech Trends',
   'Policy & Regulation',
   'Ethics & Governance',
-  'Research & Data',
+  'Research',
   'Developer Forum',
+  'Blog',
 ];
 
 const CATEGORY_ORDER = categoryOrder as RssCategory[];
@@ -25,19 +26,9 @@ const EDGE_CONFIG_KEYS: Record<RssCategory, string> = {
   'Tech Trends': 'Tech-Trends',
   'Policy & Regulation': 'Policy-Regulation',
   'Ethics & Governance': 'Ethics-Governance',
-  'Research & Data': 'Research-Data',
+  'Research': 'Research',
   'Developer Forum': 'Developer-Forum',
-};
-
-const DEFAULT_IMAGES: Record<Category, string> = {
-  'AI Strategy':
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBkc7b2xaKjr3qaZtdOOljyB6gnyk8oZRutoNh6NUeOMoJQzMNVukPxB7ZV-SNnGWtGB1RZZ7U6U5FlcttQSuHMatvHpGuijaM-IqVQu9jPZ6HBp5QhYm3tFx_S6tcnmDid6-ZP2TKlemxaBER5av3dVLA6lbwLIgtPjSdEZmqe62tDa6iTCU0CeDPy21mCRSlFltVzK3BWrt2fNe38n9EIP0IIiPJPXa_wwTvakMJB8DSwM_JVzoSQA0ea0W9Qr3HjxsSBorkb0R0',
-  'Tech Trends': 'https://images.unsplash.com/photo-1591453089816-0fbb971b454c?auto=format&fit=crop&w=1600&q=80',
-  'Policy & Regulation': 'https://images.unsplash.com/photo-1568030002456-4f6e6f405ee0?auto=format&fit=crop&w=1600&q=80',
-  'Ethics & Governance': 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=1600&q=80',
-  'Research & Data':
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCCtre3nBxfKjyzjtISH7TUTLf00qAnoiQYNIhX5dU-Q-q_hoMFHc4_irOm2iFzKMjy_yYcWPTKIkiQJoi9EUNw9zJrvWA8jNvqdGwOzPYIo7PTLMOrsAfFf9f9TdmuNYR3THRw8bUEveMBxFEdFZH9AU6b58ebExbmAR_F8sEP7lgkTZZ3PrBIo0zjLs2cVHwtb5lXdyot6ajcudAiR8CBDebbXCSJB02WHPQG9IuBSXPs85DWaysx9Ps2tBOagZXQqxRMa2x3lFI',
-  Blog: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1600&q=80',
+  'Blog': 'Blog',
 };
 
 const parser = new Parser({
@@ -165,7 +156,7 @@ async function fetchCategoryInsights(category: RssCategory, sources: FeedSource[
           link,
           source: source.name,
           publishedAt: typedItem.isoDate ?? typedItem.pubDate ?? '',
-          image: extractImage(typedItem) ?? DEFAULT_IMAGES[category],
+          image: extractImage(typedItem) ?? '',
           readTime: estimateReadTime(summary),
         });
       }
@@ -194,7 +185,7 @@ export async function getRssHomepageInsights(): Promise<Omit<HomepageInsights, '
       'Tech Trends': [],
       'Policy & Regulation': [],
       'Ethics & Governance': [],
-      'Research & Data': [],
+      'Research': [],
     };
   }
 

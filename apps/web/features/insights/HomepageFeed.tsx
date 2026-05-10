@@ -16,8 +16,9 @@ const CATEGORY_LABELS: Record<FilterKey, string> = {
   'Tech Trends': '技术趋势',
   'Policy & Regulation': '政策合规',
   'Ethics & Governance': '伦理治理',
-  'Research & Data': '研究数据',
-  Blog: '深度文章',
+  'Research': '研究数据',
+  'Developer Forum': '开发者论坛',
+  "Blog": '深度文章',
 };
 
 const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
@@ -25,8 +26,9 @@ const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
   'Tech Trends': '模型、智能体、基础设施和工具链变化',
   'Policy & Regulation': '监管、合规、版权和行业政策',
   'Ethics & Governance': '治理、风险、安全和责任边界',
-  'Research & Data': '论文、基准、数据集和实验结果',
-  Blog: '长文解读、实操指南和专题内容',
+  'Research': '论文、基准、数据集和实验结果',
+  'Developer Forum': '开发者社区、论坛和会议',
+  "Blog": '长文解读、实操指南和专题内容',
 };
 
 const TOOL_CARDS = [
@@ -164,7 +166,7 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
   }, [activeFilter, availableCategories]);
 
   const strategy = insights['AI Strategy'][0];
-  const research = insights['Research & Data'][0];
+  const research = insights['Research'][0];
   const policy = insights['Policy & Regulation'][0];
   const trends = insights['Tech Trends'][0];
   const ethics = insights['Ethics & Governance'][0];

@@ -3,8 +3,9 @@ export type Category =
   | 'Tech Trends'
   | 'Policy & Regulation'
   | 'Ethics & Governance'
-  | 'Research & Data'
-  | 'Developer Forum';
+  | 'Research'
+  | 'Developer Forum'
+  | 'Blog';
 
 export type RssCategory = Category;
 
