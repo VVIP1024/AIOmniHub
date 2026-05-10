@@ -16,7 +16,7 @@ const CATEGORY_LABELS: Record<FilterKey, string> = {
   'Tech Trends': '技术趋势',
   'Policy & Regulation': '政策合规',
   'Ethics & Governance': '伦理治理',
-  'Research': '研究数据',
+  'Research': '技术研究',
   'Developer Forum': '开发者论坛',
   "Blog": '深度文章',
 };
@@ -26,7 +26,7 @@ const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
   'Tech Trends': '模型、智能体、基础设施和工具链变化',
   'Policy & Regulation': '监管、合规、版权和行业政策',
   'Ethics & Governance': '治理、风险、安全和责任边界',
-  'Research': '论文、基准、数据集和实验结果',
+  'Research': '技术研究',
   'Developer Forum': '开发者社区、论坛和会议',
   "Blog": '长文解读、实操指南和专题内容',
 };
