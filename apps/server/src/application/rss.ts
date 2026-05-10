@@ -18,6 +18,18 @@ type ExtendedItem = Parser.Item & {
   'media:content'?: Array<{ $?: { url?: string } }>;
 };
 
+interface ParsedFeed {
+  items?: ExtendedItem[];
+}
+
+interface FetchCategoryInsightsOptions {
+  limit?: number;
+  logger?: {
+    warn: (...args: unknown[]) => void;
+  };
+  parseFeed?: (url: string) => Promise<ParsedFeed>;
+}
+
 export const categoryOrder: Category[] = [
   'AI Strategy',
   'Tech Trends',
@@ -175,44 +187,80 @@ function toTimestamp(value?: string): number {
   return Number.isNaN(ts) ? 0 : ts;
 }
 
-async function fetchCategoryInsights(category: RssCategory, groups: FeedSourceGroup[], limit = 8): Promise<CategoryInsight[]> {
-  const candidates: CategoryInsight[] = [];
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
-  for (const group of groups) {
-    for (const source of group.sources) {
-      try {
-        const feed = await parser.parseURL(source.url);
-        for (const item of feed.items ?? []) {
-          const typedItem = item as ExtendedItem;
-          const title = (typedItem.title ?? '').trim();
-          const link = (typedItem.link ?? '').trim();
-          if (!title || !link) continue;
+function itemToInsight(category: RssCategory, group: FeedSourceGroup, source: FeedSource, item: ExtendedItem): CategoryInsight | null {
+  const title = (item.title ?? '').trim();
+  const link = (item.link ?? '').trim();
+  if (!title || !link) return null;
 
-          const rawSummary =
-            typedItem.contentSnippet ??
-            typedItem.summary ??
-            typedItem.content ??
-            typedItem['content:encoded'] ??
-            'No summary available';
+  const rawSummary =
+    item.contentSnippet ??
+    item.summary ??
+    item.content ??
+    item['content:encoded'] ??
+    'No summary available';
 
-          const summary = truncate(stripHtml(rawSummary), 180);
-          candidates.push({
-            category,
-            ...(group.group ? { sourceGroup: group.group } : {}),
-            title,
-            summary,
-            link,
-            source: source.name,
-            publishedAt: typedItem.isoDate ?? typedItem.pubDate ?? '',
-            image: extractImage(typedItem) ?? '',
-            readTime: estimateReadTime(summary),
-          });
-        }
-      } catch {
-        continue;
-      }
+  const summary = truncate(stripHtml(rawSummary), 180);
+  return {
+    category,
+    ...(group.group ? { sourceGroup: group.group } : {}),
+    title,
+    summary,
+    link,
+    source: source.name,
+    publishedAt: item.isoDate ?? item.pubDate ?? '',
+    image: extractImage(item) ?? '',
+    readTime: estimateReadTime(summary),
+  };
+}
+
+async function fetchSourceInsights(
+  category: RssCategory,
+  group: FeedSourceGroup,
+  source: FeedSource,
+  options: Required<Pick<FetchCategoryInsightsOptions, 'logger' | 'parseFeed'>>,
+): Promise<CategoryInsight[]> {
+  try {
+    const feed = await options.parseFeed(source.url);
+    const insights = (feed.items ?? [])
+      .map((item) => itemToInsight(category, group, source, item))
+      .filter((item): item is CategoryInsight => item !== null);
+
+    if (insights.length === 0) {
+      options.logger.warn(
+        'RSS source returned no usable items',
+        `${source.name} (${source.url})`,
+      );
     }
+
+    return insights;
+  } catch (error) {
+    options.logger.warn(
+      'Failed to fetch RSS source',
+      `${source.name} (${source.url}): ${toErrorMessage(error)}`,
+    );
+    return [];
   }
+}
+
+export async function fetchCategoryInsights(
+  category: RssCategory,
+  groups: FeedSourceGroup[],
+  options: FetchCategoryInsightsOptions = {},
+): Promise<CategoryInsight[]> {
+  const limit = options.limit ?? 8;
+  const fetchOptions = {
+    logger: options.logger ?? console,
+    parseFeed: options.parseFeed ?? ((url: string) => parser.parseURL(url) as Promise<ParsedFeed>),
+  };
+
+  const sourceTasks = groups.flatMap((group) =>
+    group.sources.map((source) => fetchSourceInsights(category, group, source, fetchOptions)),
+  );
+  const candidates = (await Promise.all(sourceTasks)).flat();
 
   const seen = new Set<string>();
   candidates.sort((a, b) => toTimestamp(b.publishedAt) - toTimestamp(a.publishedAt));
