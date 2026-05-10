@@ -168,9 +168,16 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
     return Object.fromEntries(
       navigation
         .filter(({ category }) => availableCategories.includes(category))
-        .map(({ category, groups }) => [category, groups]),
+        .map(({ category, groups }) => {
+          const groupsWithItems = new Set(
+            insights[category]
+              .map((item) => item.sourceGroup)
+              .filter((group): group is string => Boolean(group)),
+          );
+          return [category, groups.filter((group) => groupsWithItems.has(group))];
+        }),
     ) as Record<Category, string[]>;
-  }, [availableCategories, navigation]);
+  }, [availableCategories, insights, navigation]);
 
   useEffect(() => {
     if (activeFilter !== 'All Insights' && !availableCategories.includes(activeFilter)) {
@@ -435,37 +442,46 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
               ))}
             </div>
           ) : activeFilter !== 'All Insights' ? (
-            <div className="grid grid-cols-1 gap-gutter md:grid-cols-2 lg:grid-cols-3">
-              {filteredList.map((item) => (
-                <article key={`${item.link}-${item.title}`} className="group">
-                  <a className="block h-full" href={item.link} {...getLinkProps(item.link)}>
-                    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
-                      <div className="h-52 overflow-hidden bg-slate-100">
-                        <img
-                          alt={item.title}
-                          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                          src={item.image}
-                        />
-                      </div>
-                      <div className="flex flex-grow flex-col p-lg">
-                        <ArticleMeta item={item} />
-                        <TagList tags={item.tags} />
-                        <h3 className="mt-md line-clamp-3 font-h3 text-[24px] leading-tight text-slate-950 transition-colors group-hover:text-[#2170e4]">
-                          {item.title}
-                        </h3>
-                        <p className="mt-sm line-clamp-4 flex-grow font-body-md text-[15px] leading-7 text-slate-600">
-                          {item.summary}
-                        </p>
-                        <div className="mt-lg flex items-center justify-between border-t border-slate-200 pt-md font-label-sm text-[11px] text-slate-500">
-                          <span className="max-w-[55%] truncate">{getCategoryLabel(item.category)}</span>
-                          <span>{formatDate(item.publishedAt)}</span>
+            filteredList.length > 0 ? (
+              <div className="grid grid-cols-1 gap-gutter md:grid-cols-2 lg:grid-cols-3">
+                {filteredList.map((item) => (
+                  <article key={`${item.link}-${item.title}`} className="group">
+                    <a className="block h-full" href={item.link} {...getLinkProps(item.link)}>
+                      <div className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+                        <div className="h-52 overflow-hidden bg-slate-100">
+                          <img
+                            alt={item.title}
+                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                            src={item.image}
+                          />
+                        </div>
+                        <div className="flex flex-grow flex-col p-lg">
+                          <ArticleMeta item={item} />
+                          <TagList tags={item.tags} />
+                          <h3 className="mt-md line-clamp-3 font-h3 text-[24px] leading-tight text-slate-950 transition-colors group-hover:text-[#2170e4]">
+                            {item.title}
+                          </h3>
+                          <p className="mt-sm line-clamp-4 flex-grow font-body-md text-[15px] leading-7 text-slate-600">
+                            {item.summary}
+                          </p>
+                          <div className="mt-lg flex items-center justify-between border-t border-slate-200 pt-md font-label-sm text-[11px] text-slate-500">
+                            <span className="max-w-[55%] truncate">{getCategoryLabel(item.category)}</span>
+                            <span>{formatDate(item.publishedAt)}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </a>
-                </article>
-              ))}
-            </div>
+                    </a>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-white p-xl text-center">
+                <h3 className="font-h3 text-[24px] text-slate-950">当前来源暂无可展示内容</h3>
+                <p className="mt-sm font-body-md text-[15px] leading-7 text-slate-600">
+                  该来源可能暂时没有返回有效 RSS 条目，或内容被后端抓取诊断过滤。
+                </p>
+              </div>
+            )
           ) : null}
         </section>
 

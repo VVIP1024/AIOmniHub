@@ -257,19 +257,37 @@ export async function fetchCategoryInsights(
     parseFeed: options.parseFeed ?? ((url: string) => parser.parseURL(url) as Promise<ParsedFeed>),
   };
 
-  const sourceTasks = groups.flatMap((group) =>
-    group.sources.map((source) => fetchSourceInsights(category, group, source, fetchOptions)),
+  const groupResults = await Promise.all(
+    groups.map(async (group) => {
+      const sourceResults = await Promise.all(
+        group.sources.map((source) => fetchSourceInsights(category, group, source, fetchOptions)),
+      );
+      return {
+        group,
+        candidates: sourceResults.flat(),
+      };
+    }),
   );
-  const candidates = (await Promise.all(sourceTasks)).flat();
 
   const seen = new Set<string>();
-  candidates.sort((a, b) => toTimestamp(b.publishedAt) - toTimestamp(a.publishedAt));
-  return candidates
-    .filter((item) => {
+  const dedupe = (item: CategoryInsight) => {
       if (seen.has(item.link)) return false;
       seen.add(item.link);
       return true;
-    })
+  };
+  const sortByPublishedAt = (a: CategoryInsight, b: CategoryInsight) => toTimestamp(b.publishedAt) - toTimestamp(a.publishedAt);
+  const hasSourceGroups = groups.some((group) => group.group);
+
+  if (hasSourceGroups) {
+    return groupResults
+      .flatMap(({ candidates }) => candidates.sort(sortByPublishedAt).filter(dedupe).slice(0, limit))
+      .sort(sortByPublishedAt);
+  }
+
+  return groupResults
+    .flatMap(({ candidates }) => candidates)
+    .sort(sortByPublishedAt)
+    .filter(dedupe)
     .slice(0, limit);
 }
 
