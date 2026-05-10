@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Category, CategoryInsight, HomepageInsights, SourceNavigationCategory } from '@/utils/rss';
 
 type FilterKey = 'All Insights' | Category;
+const FEED_PAGE_SIZE = 8;
 
 interface HomepageFeedProps {
   navigation: SourceNavigationCategory[];
@@ -157,6 +158,7 @@ function CompactArticleCard({ item }: { item: CategoryInsight }) {
 export default function HomepageFeed({ navigation, insights }: HomepageFeedProps) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All Insights');
   const [activeSourceGroup, setActiveSourceGroup] = useState<string | null>(null);
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
   const categoryOrder = useMemo(() => navigation.map((item) => item.category), [navigation]);
 
   const availableCategories = useMemo(
@@ -212,6 +214,10 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
       : activeSourceGroup
         ? insights[activeFilter].filter((item) => item.sourceGroup === activeSourceGroup)
         : insights[activeFilter];
+  const visibleListKey = `${activeFilter}:${activeSourceGroup ?? 'all'}`;
+  const visibleCount = visibleCounts[visibleListKey] ?? FEED_PAGE_SIZE;
+  const visibleList = filteredList.slice(0, visibleCount);
+  const remainingCount = Math.max(0, filteredList.length - visibleList.length);
   const totalInsights = availableCategories.reduce((sum, category) => sum + insights[category].length, 0);
   const latestItem = availableCategories
     .flatMap((category) => insights[category])
@@ -443,37 +449,58 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
             </div>
           ) : activeFilter !== 'All Insights' ? (
             filteredList.length > 0 ? (
-              <div className="grid grid-cols-1 gap-gutter md:grid-cols-2 lg:grid-cols-3">
-                {filteredList.map((item) => (
-                  <article key={`${item.link}-${item.title}`} className="group">
-                    <a className="block h-full" href={item.link} {...getLinkProps(item.link)}>
-                      <div className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
-                        <div className="h-52 overflow-hidden bg-slate-100">
-                          <img
-                            alt={item.title}
-                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                            src={item.image}
-                          />
-                        </div>
-                        <div className="flex flex-grow flex-col p-lg">
-                          <ArticleMeta item={item} />
-                          <TagList tags={item.tags} />
-                          <h3 className="mt-md line-clamp-3 font-h3 text-[24px] leading-tight text-slate-950 transition-colors group-hover:text-[#2170e4]">
-                            {item.title}
-                          </h3>
-                          <p className="mt-sm line-clamp-4 flex-grow font-body-md text-[15px] leading-7 text-slate-600">
-                            {item.summary}
-                          </p>
-                          <div className="mt-lg flex items-center justify-between border-t border-slate-200 pt-md font-label-sm text-[11px] text-slate-500">
-                            <span className="max-w-[55%] truncate">{getCategoryLabel(item.category)}</span>
-                            <span>{formatDate(item.publishedAt)}</span>
+              <>
+                <div className="grid grid-cols-1 gap-gutter md:grid-cols-2 lg:grid-cols-3">
+                  {visibleList.map((item) => (
+                    <article key={`${item.link}-${item.title}`} className="group">
+                      <a className="block h-full" href={item.link} {...getLinkProps(item.link)}>
+                        <div className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+                          <div className="h-52 overflow-hidden bg-slate-100">
+                            <img
+                              alt={item.title}
+                              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                              src={item.image}
+                            />
+                          </div>
+                          <div className="flex flex-grow flex-col p-lg">
+                            <ArticleMeta item={item} />
+                            <TagList tags={item.tags} />
+                            <h3 className="mt-md line-clamp-3 font-h3 text-[24px] leading-tight text-slate-950 transition-colors group-hover:text-[#2170e4]">
+                              {item.title}
+                            </h3>
+                            <p className="mt-sm line-clamp-4 flex-grow font-body-md text-[15px] leading-7 text-slate-600">
+                              {item.summary}
+                            </p>
+                            <div className="mt-lg flex items-center justify-between border-t border-slate-200 pt-md font-label-sm text-[11px] text-slate-500">
+                              <span className="max-w-[55%] truncate">{getCategoryLabel(item.category)}</span>
+                              <span>{formatDate(item.publishedAt)}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </a>
-                  </article>
-                ))}
-              </div>
+                      </a>
+                    </article>
+                  ))}
+                </div>
+                {remainingCount > 0 && (
+                  <div className="mt-xl flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVisibleCounts((current) => ({
+                          ...current,
+                          [visibleListKey]: visibleCount + FEED_PAGE_SIZE,
+                        }))
+                      }
+                      className="inline-flex items-center gap-3 rounded-lg border border-slate-300 bg-white px-5 py-3 font-nav-link text-[14px] font-semibold text-slate-950 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-950 hover:shadow-[0_14px_40px_rgba(15,23,42,0.08)]"
+                    >
+                      <span>加载更多</span>
+                      <span className="rounded-full bg-slate-950 px-2.5 py-1 font-label-sm text-[11px] text-white">
+                        还有 {remainingCount} 条
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="rounded-lg border border-dashed border-slate-300 bg-white p-xl text-center">
                 <h3 className="font-h3 text-[24px] text-slate-950">当前来源暂无可展示内容</h3>

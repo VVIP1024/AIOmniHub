@@ -251,7 +251,7 @@ export async function fetchCategoryInsights(
   groups: FeedSourceGroup[],
   options: FetchCategoryInsightsOptions = {},
 ): Promise<CategoryInsight[]> {
-  const limit = options.limit ?? 8;
+  const limit = options.limit;
   const fetchOptions = {
     logger: options.logger ?? console,
     parseFeed: options.parseFeed ?? ((url: string) => parser.parseURL(url) as Promise<ParsedFeed>),
@@ -280,15 +280,18 @@ export async function fetchCategoryInsights(
 
   if (hasSourceGroups) {
     return groupResults
-      .flatMap(({ candidates }) => candidates.sort(sortByPublishedAt).filter(dedupe).slice(0, limit))
+      .flatMap(({ candidates }) => {
+        const groupItems = candidates.sort(sortByPublishedAt).filter(dedupe);
+        return limit === undefined ? groupItems : groupItems.slice(0, limit);
+      })
       .sort(sortByPublishedAt);
   }
 
-  return groupResults
+  const categoryItems = groupResults
     .flatMap(({ candidates }) => candidates)
     .sort(sortByPublishedAt)
-    .filter(dedupe)
-    .slice(0, limit);
+    .filter(dedupe);
+  return limit === undefined ? categoryItems : categoryItems.slice(0, limit);
 }
 
 export async function getRssHomepageData(): Promise<Omit<HomepageData, 'insights'> & { insights: Omit<HomepageInsights, 'Blog'> }> {

@@ -3,6 +3,28 @@ import test from 'node:test';
 import { fetchCategoryInsights } from './rss.js';
 import type { FeedSourceGroup } from '../types.js';
 
+test('does not truncate source group results without an explicit limit', async () => {
+  const groups: FeedSourceGroup[] = [
+    {
+      group: 'OpenAI',
+      sources: [{ name: 'OpenAI', url: 'https://example.com/openai.xml' }],
+    },
+  ];
+
+  const insights = await fetchCategoryInsights('AI Strategy', groups, {
+    parseFeed: async (url: string) => ({
+      items: Array.from({ length: 10 }, (_, index) => ({
+        title: `${url} item ${index + 1}`,
+        link: `${url}#${index + 1}`,
+        contentSnippet: 'summary',
+        isoDate: `2026-05-${String(10 - index).padStart(2, '0')}T00:00:00.000Z`,
+      })),
+    }),
+  });
+
+  assert.equal(insights.length, 10);
+});
+
 test('keeps results from every source group when applying limits', async () => {
   const groups: FeedSourceGroup[] = [
     {
