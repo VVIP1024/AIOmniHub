@@ -64,6 +64,15 @@ export async function routeRequest(
       });
     }
 
+    if (method === 'GET' && url.pathname === '/api/article-image') {
+      const articleUrl = url.searchParams.get('url');
+      if (!articleUrl) return json(400, { error: 'Missing article URL' });
+
+      return json(200, await dependencies.articleImage.resolve(articleUrl), {
+        'Cache-Control': 's-maxage=3600, stale-while-revalidate=86400',
+      });
+    }
+
     if (method === 'GET' && url.pathname === '/api/blog/posts') {
       return json(200, { items: await dependencies.blog.getPosts() });
     }

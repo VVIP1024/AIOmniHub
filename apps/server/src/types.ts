@@ -148,4 +148,7 @@ export interface ServerDependencies {
     put(input: BlobPutInput): Promise<BlobPutResult>;
     delete(pathname: string): Promise<BlobDeleteResult>;
   };
+  articleImage: {
+    resolve(url: string): Promise<{ image: string | null; cached: boolean }>;
+  };
 }

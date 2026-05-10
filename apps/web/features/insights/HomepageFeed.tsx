@@ -16,6 +16,7 @@ interface PollinationsImageJob {
 
 let pollinationsImageQueue: PollinationsImageJob[] = [];
 let isPollinationsImageQueueRunning = false;
+const articleImageCache = new Map<string, Promise<string | null>>();
 
 function runPollinationsImageQueue() {
   if (isPollinationsImageQueueRunning) return;
@@ -48,6 +49,26 @@ function removePollinationsImageJob(id: string) {
 
 function isPollinationsImage(src: string): boolean {
   return src.startsWith(POLLINATIONS_IMAGE_PREFIX);
+}
+
+function canResolveArticleImage(articleUrl: string): boolean {
+  return articleUrl.startsWith('http://') || articleUrl.startsWith('https://');
+}
+
+async function resolveArticleImage(articleUrl: string): Promise<string | null> {
+  const cached = articleImageCache.get(articleUrl);
+  if (cached) return cached;
+
+  const request = fetch(`/api/article-image?url=${encodeURIComponent(articleUrl)}`)
+    .then(async (response) => {
+      if (!response.ok) return null;
+      const body = (await response.json()) as { image?: unknown };
+      return typeof body.image === 'string' && body.image.trim() ? body.image : null;
+    })
+    .catch(() => null);
+
+  articleImageCache.set(articleUrl, request);
+  return request;
 }
 
 interface HomepageFeedProps {
@@ -176,7 +197,17 @@ function ArticleMeta({ item }: { item: CategoryInsight }) {
   );
 }
 
-function RateLimitedArticleImage({ alt, className, src }: { alt: string; className: string; src: string }) {
+function RateLimitedArticleImage({
+  alt,
+  articleUrl,
+  className,
+  src,
+}: {
+  alt: string;
+  articleUrl: string;
+  className: string;
+  src: string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const jobIdRef = useRef(`pollinations-image-${Math.random().toString(36).slice(2)}`);
   const [activeSrc, setActiveSrc] = useState(isPollinationsImage(src) ? '' : src);
@@ -193,7 +224,7 @@ function RateLimitedArticleImage({ alt, className, src }: { alt: string; classNa
 
     setActiveSrc('');
 
-    const enqueue = () => {
+    const enqueuePollinationsFallback = () => {
       if (queued || cancelled) return;
       queued = true;
       enqueuePollinationsImage({
@@ -207,9 +238,28 @@ function RateLimitedArticleImage({ alt, className, src }: { alt: string; classNa
       });
     };
 
+    const resolveVisibleImage = () => {
+      if (queued || cancelled) return;
+
+      if (!canResolveArticleImage(articleUrl)) {
+        enqueuePollinationsFallback();
+        return;
+      }
+
+      resolveArticleImage(articleUrl).then((resolvedImage) => {
+        if (cancelled) return;
+        if (resolvedImage) {
+          setActiveSrc(resolvedImage);
+          return;
+        }
+
+        enqueuePollinationsFallback();
+      });
+    };
+
     const node = containerRef.current;
     if (!node || typeof IntersectionObserver === 'undefined') {
-      enqueue();
+      resolveVisibleImage();
       return () => {
         cancelled = true;
         removePollinationsImageJob(jobId);
@@ -219,7 +269,7 @@ function RateLimitedArticleImage({ alt, className, src }: { alt: string; classNa
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          enqueue();
+          resolveVisibleImage();
           observer.disconnect();
         }
       },
@@ -236,7 +286,7 @@ function RateLimitedArticleImage({ alt, className, src }: { alt: string; classNa
       observer.disconnect();
       removePollinationsImageJob(jobId);
     };
-  }, [src]);
+  }, [articleUrl, src]);
 
   return (
     <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-slate-100">
@@ -506,6 +556,7 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
                       <div className="h-[320px] overflow-hidden bg-slate-100">
                         <RateLimitedArticleImage
                           alt={strategy.title}
+                          articleUrl={strategy.link}
                           className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           src={strategy.image}
                         />
@@ -531,6 +582,7 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
                       <div className="h-[260px] overflow-hidden bg-slate-800">
                         <RateLimitedArticleImage
                           alt={research.title}
+                          articleUrl={research.link}
                           className="h-full w-full object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-105"
                           src={research.image}
                         />
@@ -577,6 +629,7 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
                           <div className="h-52 overflow-hidden bg-slate-100">
                             <RateLimitedArticleImage
                               alt={item.title}
+                              articleUrl={item.link}
                               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                               src={item.image}
                             />

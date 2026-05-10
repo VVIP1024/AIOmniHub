@@ -1,4 +1,5 @@
 import { generateAiChat, getAiChatConfig } from './application/ai-chat.js';
+import { resolveArticleImage } from './application/article-image.js';
 import { deleteBlob, putBlob } from './application/blob-admin.js';
 import { getBlogAsset, getBlogPost, getBlogPosts, getHomepageData } from './application/blog.js';
 import { fetchGitHubTrends } from './application/github-trends.js';
@@ -25,6 +26,9 @@ export function createServerDependencies(): ServerDependencies {
     blobAdmin: {
       put: putBlob,
       delete: deleteBlob,
+    },
+    articleImage: {
+      resolve: resolveArticleImage,
     },
   };
 }
