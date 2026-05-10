@@ -170,6 +170,10 @@ function estimateReadTime(text: string): string {
   return `${minutes} MIN READ`;
 }
 
+export function getPollinationsImageUrl(title: string): string {
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(title)}`;
+}
+
 function extractImage(item: ExtendedItem): string | null {
   const enclosureUrl = (item.enclosure as { url?: string } | undefined)?.url;
   if (enclosureUrl) return enclosureUrl;
@@ -212,7 +216,7 @@ function itemToInsight(category: RssCategory, group: FeedSourceGroup, source: Fe
     link,
     source: source.name,
     publishedAt: item.isoDate ?? item.pubDate ?? '',
-    image: extractImage(item) ?? '',
+    image: extractImage(item) ?? getPollinationsImageUrl(title),
     readTime: estimateReadTime(summary),
   };
 }

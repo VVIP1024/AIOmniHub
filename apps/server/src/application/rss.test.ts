@@ -3,6 +3,32 @@ import test from 'node:test';
 import { fetchCategoryInsights } from './rss.js';
 import type { FeedSourceGroup } from '../types.js';
 
+test('uses pollinations image generated from title when feed item has no image', async () => {
+  const groups: FeedSourceGroup[] = [
+    {
+      sources: [{ name: 'OpenAI', url: 'https://example.com/openai.xml' }],
+    },
+  ];
+
+  const insights = await fetchCategoryInsights('AI Strategy', groups, {
+    parseFeed: async () => ({
+      items: [
+        {
+          title: 'Running Codex safely at OpenAI',
+          link: 'https://openai.com/index/running-codex-safely',
+          contentSnippet: 'summary',
+          isoDate: '2026-05-10T00:00:00.000Z',
+        },
+      ],
+    }),
+  });
+
+  assert.equal(
+    insights[0]?.image,
+    'https://image.pollinations.ai/prompt/Running%20Codex%20safely%20at%20OpenAI',
+  );
+});
+
 test('does not truncate source group results without an explicit limit', async () => {
   const groups: FeedSourceGroup[] = [
     {

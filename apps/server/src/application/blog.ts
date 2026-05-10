@@ -3,13 +3,12 @@ import fs from 'fs/promises';
 import matter from 'gray-matter';
 import path from 'path';
 import { getLocalStoragePath, shouldUseVercelStorage } from '../config/storage-env.js';
-import { getRssHomepageData } from './rss.js';
+import { getPollinationsImageUrl, getRssHomepageData } from './rss.js';
 import type { BlogAsset, BlogPost, CategoryInsight, HomepageData, HomepageInsights } from '../types.js';
 
 const VERCEL_BLOG_PREFIX = 'Blog/';
 const LOCAL_BLOG_DIR = 'Blob';
 const LOCAL_BLOG_PREFIX = `${LOCAL_BLOG_DIR}/`;
-const BLOG_IMAGE = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1600&q=80';
 
 interface BlogMarkdownBlob {
   pathname: string;
@@ -68,7 +67,7 @@ function parsePost(slug: string, markdown: string, uploadedAt: Date): BlogPost |
     tags,
     summary: description,
     content: body,
-    image: BLOG_IMAGE,
+    image: getPollinationsImageUrl(title),
     uploadedAt: uploadedAt.toISOString(),
     readTime: estimateReadTime(body),
   };
