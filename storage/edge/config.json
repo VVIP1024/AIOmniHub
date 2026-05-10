@@ -1,12 +1,25 @@
 {
     "AI-Strategy": [
         {
+            "name": "Planet AI RSS",
+            "url": "https://planet-ai.net/rss.xml"
+        },
+        {
             "name": "OpenAI News",
             "url": "https://openai.com/news/rss.xml"
         },
         {
             "name": "Google News",
-            "url": "https://news.google.com/rss/search?q=enterprise+AI+strategy+Gemini&hl=en-US&gl=US&ceid=US:en"
+            // "url": "https://news.google.com/rss/search?q=enterprise+AI+strategy+Gemini&hl=en-US&gl=US&ceid=US:en"
+            "url": "https://blog.google/innovation-and-ai/technology/ai/rss"
+        },
+        {
+            "name": "HuggingFace News",
+            "url": "https://huggingface.co/blog/feed.xml"
+        },
+        {
+            "name": "Hacker News RSS",
+            "url": "https://hnrss.org/newest"
         }
     ],
     "Tech-Trends": [
@@ -17,6 +30,10 @@
         {
             "name": "Git Repo",
             "url": "https://wechat2rss.bestblogs.dev/feed/38be32e5376d852c13d3383e4d7a757fd9a55ff6.xml"
+        },
+        {
+            "name": "MIT Technology Review AI",
+            "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed"
         }
     ],
     "Policy-Regulation": [],
@@ -24,11 +41,22 @@
     "Research-Data": [
         {
             "name": "Google Research",
-            "url": "https://news.google.com/rss/search?q=AI+research+benchmark&hl=en-US&gl=US&ceid=US:en"
+            // "url": "https://news.google.com/rss/search?q=AI+research+benchmark&hl=en-US&gl=US&ceid=US:en"
+            "url": "https://research.google/blog/rss"
         },
         {
             "name": "arXiv cs.AI",
             "url": "http://export.arxiv.org/rss/cs.AI"
+        }
+    ],
+    "Developer-Forum": [
+        {
+            "name": "Google Developers Blog",
+            "url": "https://developers.googleblog.com/rss"
+        },
+        {
+            "name": "Google Cloud Blog",
+            "url": "https://cloudblog.withgoogle.com/rss/"
         }
     ]
 }

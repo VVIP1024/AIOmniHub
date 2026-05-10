@@ -4,9 +4,9 @@ export type Category =
   | 'Policy & Regulation'
   | 'Ethics & Governance'
   | 'Research & Data'
-  | 'Blog';
+  | 'Developer Forum';
 
-export type RssCategory = Exclude<Category, 'Blog'>;
+export type RssCategory = Category;
 
 export interface FeedSource {
   name: string;

@@ -15,6 +15,7 @@ export const categoryOrder: Category[] = [
   'Policy & Regulation',
   'Ethics & Governance',
   'Research & Data',
+  'Developer Forum',
 ];
 
 const CATEGORY_ORDER = categoryOrder as RssCategory[];
@@ -25,6 +26,7 @@ const EDGE_CONFIG_KEYS: Record<RssCategory, string> = {
   'Policy & Regulation': 'Policy-Regulation',
   'Ethics & Governance': 'Ethics-Governance',
   'Research & Data': 'Research-Data',
+  'Developer Forum': 'Developer-Forum',
 };
 
 const DEFAULT_IMAGES: Record<Category, string> = {
