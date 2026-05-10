@@ -16,7 +16,6 @@ export const categoryOrder: Category[] = [
   'Ethics & Governance',
   'Research',
   'Developer Forum',
-  'Blog',
 ];
 
 const CATEGORY_ORDER = categoryOrder as RssCategory[];
@@ -28,7 +27,6 @@ const EDGE_CONFIG_KEYS: Record<RssCategory, string> = {
   'Ethics & Governance': 'Ethics-Governance',
   'Research': 'Research',
   'Developer Forum': 'Developer-Forum',
-  'Blog': 'Blog',
 };
 
 const parser = new Parser({
@@ -187,7 +185,6 @@ export async function getRssHomepageInsights(): Promise<Omit<HomepageInsights, '
       'Ethics & Governance': [],
       'Research': [],
       'Developer Forum': [],
-      'Blog': [],
     };
   }
 

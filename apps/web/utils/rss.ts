@@ -10,7 +10,6 @@ export const categoryOrder: Category[] = [
   'Ethics & Governance',
   'Research',
   'Developer Forum',
-  'Blog',
 ];
 
 const dependencies = createServerDependencies();

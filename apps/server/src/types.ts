@@ -7,7 +7,7 @@ export type Category =
   | 'Developer Forum'
   | 'Blog';
 
-export type RssCategory = Category;
+export type RssCategory = Exclude<Category, 'Blog'>;
 
 export interface FeedSource {
   name: string;
