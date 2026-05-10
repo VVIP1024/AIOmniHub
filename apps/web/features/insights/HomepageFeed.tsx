@@ -1,10 +1,54 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Category, CategoryInsight, HomepageInsights, SourceNavigationCategory } from '@/utils/rss';
 
 type FilterKey = 'All Insights' | Category;
 const FEED_PAGE_SIZE = 8;
+const POLLINATIONS_IMAGE_PREFIX = 'https://image.pollinations.ai/prompt/';
+const POLLINATIONS_IMAGE_INTERVAL_MS = 3000;
+
+interface PollinationsImageJob {
+  id: string;
+  start: () => void;
+  isCancelled: () => boolean;
+}
+
+let pollinationsImageQueue: PollinationsImageJob[] = [];
+let isPollinationsImageQueueRunning = false;
+
+function runPollinationsImageQueue() {
+  if (isPollinationsImageQueueRunning) return;
+
+  const nextJob = pollinationsImageQueue.shift();
+  if (!nextJob) return;
+
+  if (nextJob.isCancelled()) {
+    runPollinationsImageQueue();
+    return;
+  }
+
+  isPollinationsImageQueueRunning = true;
+  nextJob.start();
+
+  window.setTimeout(() => {
+    isPollinationsImageQueueRunning = false;
+    runPollinationsImageQueue();
+  }, POLLINATIONS_IMAGE_INTERVAL_MS);
+}
+
+function enqueuePollinationsImage(job: PollinationsImageJob) {
+  pollinationsImageQueue.push(job);
+  runPollinationsImageQueue();
+}
+
+function removePollinationsImageJob(id: string) {
+  pollinationsImageQueue = pollinationsImageQueue.filter((job) => job.id !== id);
+}
+
+function isPollinationsImage(src: string): boolean {
+  return src.startsWith(POLLINATIONS_IMAGE_PREFIX);
+}
 
 interface HomepageFeedProps {
   navigation: SourceNavigationCategory[];
@@ -128,6 +172,83 @@ function ArticleMeta({ item }: { item: CategoryInsight }) {
         {getCategoryLabel(item.category)}
       </span>
       <span className="font-label-sm text-[11px] text-slate-500">{item.readTime}</span>
+    </div>
+  );
+}
+
+function RateLimitedArticleImage({ alt, className, src }: { alt: string; className: string; src: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const jobIdRef = useRef(`pollinations-image-${Math.random().toString(36).slice(2)}`);
+  const [activeSrc, setActiveSrc] = useState(isPollinationsImage(src) ? '' : src);
+
+  useEffect(() => {
+    if (!isPollinationsImage(src)) {
+      setActiveSrc(src);
+      return;
+    }
+
+    const jobId = jobIdRef.current;
+    let cancelled = false;
+    let queued = false;
+
+    setActiveSrc('');
+
+    const enqueue = () => {
+      if (queued || cancelled) return;
+      queued = true;
+      enqueuePollinationsImage({
+        id: jobId,
+        isCancelled: () => cancelled,
+        start: () => {
+          if (!cancelled) {
+            setActiveSrc(src);
+          }
+        },
+      });
+    };
+
+    const node = containerRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      enqueue();
+      return () => {
+        cancelled = true;
+        removePollinationsImageJob(jobId);
+      };
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          enqueue();
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: '0px',
+        threshold: 0.01,
+      },
+    );
+
+    observer.observe(node);
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+      removePollinationsImageJob(jobId);
+    };
+  }, [src]);
+
+  return (
+    <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-slate-100">
+      {activeSrc ? (
+        <img alt={alt} className={className} loading="lazy" src={activeSrc} />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(33,112,228,0.14),rgba(241,245,249,0.95)_55%,rgba(226,232,240,1))]">
+          <span className="rounded-full border border-slate-300 bg-white/80 px-3 py-1 font-label-sm text-[11px] text-slate-500 shadow-sm">
+            图片排队生成中
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -385,7 +506,7 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
                   <a href={strategy.link} {...getLinkProps(strategy.link)}>
                     <div className="min-h-[540px] overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.1)]">
                       <div className="h-[320px] overflow-hidden bg-slate-100">
-                        <img
+                        <RateLimitedArticleImage
                           alt={strategy.title}
                           className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           src={strategy.image}
@@ -410,7 +531,7 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
                   <a href={research.link} {...getLinkProps(research.link)}>
                     <div className="flex min-h-[540px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-[#111827] text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
                       <div className="h-[260px] overflow-hidden bg-slate-800">
-                        <img
+                        <RateLimitedArticleImage
                           alt={research.title}
                           className="h-full w-full object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-105"
                           src={research.image}
@@ -456,7 +577,7 @@ export default function HomepageFeed({ navigation, insights }: HomepageFeedProps
                       <a className="block h-full" href={item.link} {...getLinkProps(item.link)}>
                         <div className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
                           <div className="h-52 overflow-hidden bg-slate-100">
-                            <img
+                            <RateLimitedArticleImage
                               alt={item.title}
                               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                               src={item.image}
