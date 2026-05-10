@@ -1,6 +1,6 @@
 import { generateAiChat, getAiChatConfig } from './application/ai-chat.js';
 import { deleteBlob, putBlob } from './application/blob-admin.js';
-import { getBlogAsset, getBlogPost, getBlogPosts, getHomepageInsights } from './application/blog.js';
+import { getBlogAsset, getBlogPost, getBlogPosts, getHomepageData } from './application/blog.js';
 import { fetchGitHubTrends } from './application/github-trends.js';
 import type { ServerDependencies } from './types.js';
 
@@ -17,7 +17,7 @@ export function createServerDependencies(): ServerDependencies {
       generate: generateAiChat,
     },
     blog: {
-      getHomepageInsights,
+      getHomepageData,
       getPosts: getBlogPosts,
       getPost: getBlogPost,
       getAsset: getBlogAsset,

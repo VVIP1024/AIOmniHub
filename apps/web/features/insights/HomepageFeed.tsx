@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { Category, CategoryInsight, HomepageInsights } from '@/utils/rss';
+import type { Category, CategoryInsight, HomepageInsights, SourceNavigationCategory } from '@/utils/rss';
 
 type FilterKey = 'All Insights' | Category;
 
 interface HomepageFeedProps {
-  categoryOrder: Category[];
+  navigation: SourceNavigationCategory[];
   insights: HomepageInsights;
 }
 
-const CATEGORY_LABELS: Record<FilterKey, string> = {
+const CATEGORY_LABELS: Partial<Record<FilterKey, string>> = {
   'All Insights': '全部情报',
   'AI Strategy': '战略观察',
   'Tech Trends': '技术趋势',
@@ -21,7 +21,7 @@ const CATEGORY_LABELS: Record<FilterKey, string> = {
   "Blog": '深度文章',
 };
 
-const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
+const CATEGORY_DESCRIPTIONS: Partial<Record<Category, string>> = {
   'AI Strategy': '产品、商业化、组织采用与竞争策略',
   'Tech Trends': '模型、智能体、基础设施和工具链变化',
   'Policy & Regulation': '监管、合规、版权和行业政策',
@@ -99,6 +99,10 @@ function getCategoryLabel(category: FilterKey): string {
   return CATEGORY_LABELS[category] ?? category;
 }
 
+function getCategoryDescription(category: Category): string {
+  return CATEGORY_DESCRIPTIONS[category] ?? `${getCategoryLabel(category)} 相关资讯与来源更新`;
+}
+
 function TagList({ tags }: { tags?: string[] }) {
   if (!tags?.length) return null;
 
@@ -150,14 +154,23 @@ function CompactArticleCard({ item }: { item: CategoryInsight }) {
   );
 }
 
-export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedProps) {
+export default function HomepageFeed({ navigation, insights }: HomepageFeedProps) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All Insights');
+  const [activeSourceGroup, setActiveSourceGroup] = useState<string | null>(null);
+  const categoryOrder = useMemo(() => navigation.map((item) => item.category), [navigation]);
 
   const availableCategories = useMemo(
     () => categoryOrder.filter((category) => insights[category].length > 0),
     [categoryOrder, insights],
   );
   const tabs = useMemo<FilterKey[]>(() => ['All Insights', ...availableCategories], [availableCategories]);
+  const sourceGroupsByCategory = useMemo(() => {
+    return Object.fromEntries(
+      navigation
+        .filter(({ category }) => availableCategories.includes(category))
+        .map(({ category, groups }) => [category, groups]),
+    ) as Record<Category, string[]>;
+  }, [availableCategories, navigation]);
 
   useEffect(() => {
     if (activeFilter !== 'All Insights' && !availableCategories.includes(activeFilter)) {
@@ -165,14 +178,33 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
     }
   }, [activeFilter, availableCategories]);
 
-  const strategy = insights['AI Strategy'][0];
-  const research = insights['Research'][0];
-  const policy = insights['Policy & Regulation'][0];
-  const trends = insights['Tech Trends'][0];
-  const ethics = insights['Ethics & Governance'][0];
-  const recentBlogInsights = insights.Blog.slice(0, 3);
-  const highlightedItems = [policy, trends, ethics, ...recentBlogInsights].filter(isInsight);
-  const filteredList = activeFilter === 'All Insights' ? [] : insights[activeFilter];
+  useEffect(() => {
+    if (activeFilter === 'All Insights') {
+      setActiveSourceGroup(null);
+      return;
+    }
+
+    const groups = sourceGroupsByCategory[activeFilter] ?? [];
+    if (activeSourceGroup && !groups.includes(activeSourceGroup)) {
+      setActiveSourceGroup(null);
+    }
+  }, [activeFilter, activeSourceGroup, sourceGroupsByCategory]);
+
+  const strategy = insights['AI Strategy']?.[0];
+  const research = insights['Research']?.[0];
+  const policy = insights['Policy & Regulation']?.[0];
+  const trends = insights['Tech Trends']?.[0];
+  const ethics = insights['Ethics & Governance']?.[0];
+  const developerForum = insights['Developer Forum']?.[0];
+  const recentBlogInsights = insights['Blog']?.slice(0, 3);
+  const highlightedItems = [strategy, research, policy, trends, ethics, developerForum, ...recentBlogInsights].filter(isInsight);
+  const activeSourceGroups = activeFilter === 'All Insights' ? [] : sourceGroupsByCategory[activeFilter] ?? [];
+  const filteredList =
+    activeFilter === 'All Insights'
+      ? []
+      : activeSourceGroup
+        ? insights[activeFilter].filter((item) => item.sourceGroup === activeSourceGroup)
+        : insights[activeFilter];
   const totalInsights = availableCategories.reduce((sum, category) => sum + insights[category].length, 0);
   const latestItem = availableCategories
     .flatMap((category) => insights[category])
@@ -261,7 +293,10 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
                     role="tab"
                     aria-selected={isActive}
                     type="button"
-                    onClick={() => setActiveFilter(item)}
+                    onClick={() => {
+                      setActiveFilter(item);
+                      setActiveSourceGroup(null);
+                    }}
                     className={
                       isActive
                         ? 'whitespace-nowrap rounded-lg bg-slate-950 px-4 py-2 font-nav-link text-[13px] font-semibold text-white shadow-sm transition-all'
@@ -273,6 +308,41 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
                 );
               })}
             </div>
+            {activeSourceGroups.length > 0 && (
+              <div
+                className="mx-auto flex w-full max-w-7xl items-center gap-2 overflow-x-auto border-t border-slate-200 px-4 py-2 md:px-8"
+                aria-label={`${getCategoryLabel(activeFilter)} 来源`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveSourceGroup(null)}
+                  className={
+                    activeSourceGroup === null
+                      ? 'whitespace-nowrap rounded-lg bg-white px-3 py-1.5 font-label-sm text-[12px] font-semibold text-slate-950 shadow-sm ring-1 ring-slate-200'
+                      : 'whitespace-nowrap rounded-lg px-3 py-1.5 font-label-sm text-[12px] font-semibold text-slate-500 transition-all hover:bg-white hover:text-slate-950'
+                  }
+                >
+                  全部来源
+                </button>
+                {activeSourceGroups.map((group) => {
+                  const isActive = activeSourceGroup === group;
+                  return (
+                    <button
+                      key={group}
+                      type="button"
+                      onClick={() => setActiveSourceGroup(group)}
+                      className={
+                        isActive
+                          ? 'whitespace-nowrap rounded-lg bg-white px-3 py-1.5 font-label-sm text-[12px] font-semibold text-slate-950 shadow-sm ring-1 ring-slate-200'
+                          : 'whitespace-nowrap rounded-lg px-3 py-1.5 font-label-sm text-[12px] font-semibold text-slate-500 transition-all hover:bg-white hover:text-slate-950'
+                      }
+                    >
+                      {group}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </nav>
         )}
 
@@ -281,12 +351,16 @@ export default function HomepageFeed({ categoryOrder, insights }: HomepageFeedPr
             <div>
               <span className="font-label-sm text-[11px] text-slate-500">今日资讯</span>
               <h2 className="mt-sm font-h1 text-[40px] leading-tight text-slate-950">
-                {activeFilter === 'All Insights' ? '今日 AI 情报流' : getCategoryLabel(activeFilter)}
+                {activeFilter === 'All Insights'
+                  ? '今日 AI 情报流'
+                  : activeSourceGroup
+                    ? `${getCategoryLabel(activeFilter)} · ${activeSourceGroup}`
+                    : getCategoryLabel(activeFilter)}
               </h2>
             </div>
             {activeFilter !== 'All Insights' && (
               <p className="max-w-[460px] font-body-md text-[15px] leading-7 text-slate-600">
-                {CATEGORY_DESCRIPTIONS[activeFilter]}
+                {getCategoryDescription(activeFilter)}
               </p>
             )}
           </div>

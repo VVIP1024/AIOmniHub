@@ -1,5 +1,5 @@
-import { createServerDependencies, routeRequest } from '../../../server/dist/http/index.js';
-import type { ServerResponse } from '../../../server/dist/types.js';
+import { createServerDependencies, routeRequest } from '@ai-omni-hub/server/http';
+import type { ServerResponse } from '@ai-omni-hub/server/types';
 
 const dependencies = createServerDependencies();
 

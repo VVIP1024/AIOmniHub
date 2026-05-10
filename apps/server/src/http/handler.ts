@@ -59,7 +59,7 @@ export async function routeRequest(
 
   try {
     if (method === 'GET' && url.pathname === '/api/homepage-insights') {
-      return json(200, await dependencies.blog.getHomepageInsights(), {
+      return json(200, await dependencies.blog.getHomepageData(), {
         'Cache-Control': 's-maxage=1800, stale-while-revalidate=3600',
       });
     }

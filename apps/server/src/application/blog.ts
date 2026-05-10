@@ -3,8 +3,8 @@ import fs from 'fs/promises';
 import matter from 'gray-matter';
 import path from 'path';
 import { getLocalStoragePath, shouldUseVercelStorage } from '../config/storage-env.js';
-import { getRssHomepageInsights } from './rss.js';
-import type { BlogAsset, BlogPost, CategoryInsight, HomepageInsights } from '../types.js';
+import { getRssHomepageData } from './rss.js';
+import type { BlogAsset, BlogPost, CategoryInsight, HomepageData, HomepageInsights } from '../types.js';
 
 const VERCEL_BLOG_PREFIX = 'Blog/';
 const LOCAL_BLOG_DIR = 'Blob';
@@ -226,9 +226,26 @@ export async function getBlogAsset(pathname: string): Promise<BlogAsset | null> 
 }
 
 export async function getHomepageInsights(): Promise<HomepageInsights> {
-  const [rssInsights, blogInsights] = await Promise.all([getRssHomepageInsights(), getBlogInsights()]);
+  const [rssData, blogInsights] = await Promise.all([getRssHomepageData(), getBlogInsights()]);
   return {
-    ...rssInsights,
+    ...rssData.insights,
     Blog: blogInsights,
+  };
+}
+
+export async function getHomepageData(): Promise<HomepageData> {
+  const [rssData, blogInsights] = await Promise.all([getRssHomepageData(), getBlogInsights()]);
+  return {
+    navigation: [
+      ...rssData.navigation,
+      {
+        category: 'Blog',
+        groups: [],
+      },
+    ],
+    insights: {
+      ...rssData.insights,
+      Blog: blogInsights,
+    },
   };
 }

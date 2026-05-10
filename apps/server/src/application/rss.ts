@@ -2,7 +2,16 @@ import { get } from '@vercel/edge-config';
 import fs from 'fs/promises';
 import Parser from 'rss-parser';
 import { getLocalStoragePath, shouldUseVercelStorage } from '../config/storage-env.js';
-import type { Category, CategoryInsight, FeedSource, HomepageInsights, RssCategory } from '../types.js';
+import type {
+  Category,
+  CategoryInsight,
+  FeedSource,
+  FeedSourceGroup,
+  HomepageInsights,
+  HomepageData,
+  RssCategory,
+  SourceNavigationCategory,
+} from '../types.js';
 
 type ExtendedItem = Parser.Item & {
   'content:encoded'?: string;
@@ -17,8 +26,6 @@ export const categoryOrder: Category[] = [
   'Research',
   'Developer Forum',
 ];
-
-const CATEGORY_ORDER = categoryOrder as RssCategory[];
 
 const EDGE_CONFIG_KEYS: Record<RssCategory, string> = {
   'AI Strategy': 'AI-Strategy',
@@ -48,41 +55,82 @@ function sanitizeFeedSources(value: unknown): FeedSource[] | null {
   );
 }
 
-function mapDashedSourceConfig(parsed: Record<string, unknown>): Record<RssCategory, FeedSource[]> | null {
-  const mapped: Partial<Record<RssCategory, FeedSource[]>> = {};
-
-  for (const category of CATEGORY_ORDER) {
-    const cleaned = sanitizeFeedSources(parsed[EDGE_CONFIG_KEYS[category]]);
-    if (cleaned === null) return null;
-    mapped[category] = cleaned;
-  }
-
-  return mapped as Record<RssCategory, FeedSource[]>;
+function toCategoryKey(key: string): Category {
+  const entry = Object.entries(EDGE_CONFIG_KEYS).find(([, edgeKey]) => edgeKey === key);
+  return entry?.[0] ?? key.replace(/-/g, ' ');
 }
 
-async function getSourcesFromEdgeConfig(): Promise<Record<RssCategory, FeedSource[]> | null> {
-  try {
-    const entries = await Promise.all(
-      CATEGORY_ORDER.map(async (category) => [category, await get(EDGE_CONFIG_KEYS[category])] as const),
-    );
-    const mapped: Partial<Record<RssCategory, FeedSource[]>> = {};
+function toEdgeConfigKey(category: Category): string {
+  return EDGE_CONFIG_KEYS[category] ?? category.replace(/\s+/g, '-');
+}
 
-    for (const [category, value] of entries) {
-      const cleaned = sanitizeFeedSources(value);
-      if (cleaned === null) return null;
-      mapped[category] = cleaned;
+function sanitizeFeedSourceGroups(value: unknown): FeedSourceGroup[] | null {
+  const legacySources = sanitizeFeedSources(value);
+  if (legacySources) {
+    return [
+      {
+        sources: legacySources,
+      },
+    ];
+  }
+
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const groups: FeedSourceGroup[] = [];
+  for (const [group, sources] of Object.entries(value as Record<string, unknown>)) {
+    const cleaned = sanitizeFeedSources(sources);
+    if (cleaned) {
+      groups.push({
+        group,
+        sources: cleaned,
+      });
     }
+  }
 
-    return mapped as Record<RssCategory, FeedSource[]>;
+  return groups.length > 0 ? groups : null;
+}
+
+export function normalizeSourceConfig(parsed: Record<string, unknown>): {
+  navigation: SourceNavigationCategory[];
+  sources: Record<RssCategory, FeedSourceGroup[]>;
+} {
+  const sources: Partial<Record<RssCategory, FeedSourceGroup[]>> = {};
+  const navigation: SourceNavigationCategory[] = [];
+
+  for (const [rawCategory, value] of Object.entries(parsed)) {
+    const groups = sanitizeFeedSourceGroups(value);
+    if (!groups) continue;
+
+    const category = toCategoryKey(rawCategory) as RssCategory;
+    sources[category] = groups;
+    navigation.push({
+      category,
+      groups: groups.map((group) => group.group).filter((group): group is string => Boolean(group)),
+    });
+  }
+
+  return {
+    navigation,
+    sources: sources as Record<RssCategory, FeedSourceGroup[]>,
+  };
+}
+
+async function getSourcesFromEdgeConfig(): Promise<ReturnType<typeof normalizeSourceConfig> | null> {
+  try {
+    const categories = categoryOrder as RssCategory[];
+    const entries = await Promise.all(
+      categories.map(async (category) => [toEdgeConfigKey(category), await get(toEdgeConfigKey(category))] as const),
+    );
+    return normalizeSourceConfig(Object.fromEntries(entries));
   } catch {
     return null;
   }
 }
 
-async function getSourcesFromLocalEdgeConfig(): Promise<Record<RssCategory, FeedSource[]> | null> {
+async function getSourcesFromLocalEdgeConfig(): Promise<ReturnType<typeof normalizeSourceConfig> | null> {
   try {
     const rawConfig = await fs.readFile(getLocalStoragePath('edge', 'config.json'), 'utf8');
-    return mapDashedSourceConfig(JSON.parse(rawConfig) as Record<string, unknown>);
+    return normalizeSourceConfig(JSON.parse(rawConfig) as Record<string, unknown>);
   } catch {
     return null;
   }
@@ -127,39 +175,42 @@ function toTimestamp(value?: string): number {
   return Number.isNaN(ts) ? 0 : ts;
 }
 
-async function fetchCategoryInsights(category: RssCategory, sources: FeedSource[], limit = 8): Promise<CategoryInsight[]> {
+async function fetchCategoryInsights(category: RssCategory, groups: FeedSourceGroup[], limit = 8): Promise<CategoryInsight[]> {
   const candidates: CategoryInsight[] = [];
 
-  for (const source of sources) {
-    try {
-      const feed = await parser.parseURL(source.url);
-      for (const item of feed.items ?? []) {
-        const typedItem = item as ExtendedItem;
-        const title = (typedItem.title ?? '').trim();
-        const link = (typedItem.link ?? '').trim();
-        if (!title || !link) continue;
+  for (const group of groups) {
+    for (const source of group.sources) {
+      try {
+        const feed = await parser.parseURL(source.url);
+        for (const item of feed.items ?? []) {
+          const typedItem = item as ExtendedItem;
+          const title = (typedItem.title ?? '').trim();
+          const link = (typedItem.link ?? '').trim();
+          if (!title || !link) continue;
 
-        const rawSummary =
-          typedItem.contentSnippet ??
-          typedItem.summary ??
-          typedItem.content ??
-          typedItem['content:encoded'] ??
-          'No summary available';
+          const rawSummary =
+            typedItem.contentSnippet ??
+            typedItem.summary ??
+            typedItem.content ??
+            typedItem['content:encoded'] ??
+            'No summary available';
 
-        const summary = truncate(stripHtml(rawSummary), 180);
-        candidates.push({
-          category,
-          title,
-          summary,
-          link,
-          source: source.name,
-          publishedAt: typedItem.isoDate ?? typedItem.pubDate ?? '',
-          image: extractImage(typedItem) ?? '',
-          readTime: estimateReadTime(summary),
-        });
+          const summary = truncate(stripHtml(rawSummary), 180);
+          candidates.push({
+            category,
+            ...(group.group ? { sourceGroup: group.group } : {}),
+            title,
+            summary,
+            link,
+            source: source.name,
+            publishedAt: typedItem.isoDate ?? typedItem.pubDate ?? '',
+            image: extractImage(typedItem) ?? '',
+            readTime: estimateReadTime(summary),
+          });
+        }
+      } catch {
+        continue;
       }
-    } catch {
-      continue;
     }
   }
 
@@ -174,23 +225,28 @@ async function fetchCategoryInsights(category: RssCategory, sources: FeedSource[
     .slice(0, limit);
 }
 
-export async function getRssHomepageInsights(): Promise<Omit<HomepageInsights, 'Blog'>> {
+export async function getRssHomepageData(): Promise<Omit<HomepageData, 'insights'> & { insights: Omit<HomepageInsights, 'Blog'> }> {
   const sources = shouldUseVercelStorage() ? await getSourcesFromEdgeConfig() : await getSourcesFromLocalEdgeConfig();
 
   if (!sources) {
     return {
-      'AI Strategy': [],
-      'Tech Trends': [],
-      'Policy & Regulation': [],
-      'Ethics & Governance': [],
-      'Research': [],
-      'Developer Forum': [],
+      navigation: categoryOrder.map((category) => ({ category, groups: [] })),
+      insights: Object.fromEntries(categoryOrder.map((category) => [category, []])) as Omit<HomepageInsights, 'Blog'>,
     };
   }
 
   const results = await Promise.all(
-    CATEGORY_ORDER.map(async (category) => [category, await fetchCategoryInsights(category, sources[category])] as const),
+    sources.navigation.map(
+      async ({ category }) => [category, await fetchCategoryInsights(category, sources.sources[category] ?? [])] as const,
+    ),
   );
 
-  return Object.fromEntries(results) as Omit<HomepageInsights, 'Blog'>;
+  return {
+    navigation: sources.navigation,
+    insights: Object.fromEntries(results) as Omit<HomepageInsights, 'Blog'>,
+  };
+}
+
+export async function getRssHomepageInsights(): Promise<Omit<HomepageInsights, 'Blog'>> {
+  return (await getRssHomepageData()).insights;
 }

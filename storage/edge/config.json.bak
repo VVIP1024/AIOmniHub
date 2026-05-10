@@ -1,0 +1,126 @@
+{
+    "AI-Strategy": [
+        {
+            "name": "Planet AI RSS",
+            "url": "https://planet-ai.net/rss.xml"
+        },
+        {
+            "name": "OpenAI News",
+            "url": "https://openai.com/news/rss.xml"
+        },
+        {
+            "name": "OpenAI Announcements RSS",
+            "url": "https://community.openai.com/c/announcements/6.rss"
+        },
+        {
+            "name": "OpenAI Community Latest RSS",
+            "url": "https://community.openai.com/latest.rss"
+        },
+        {
+            "name": "OpenAI Community Top RSS",
+            "url": "https://community.openai.com/top.rss"
+        },
+        {
+            "name": "OpenAI Community Search RSS",
+            "url": "https://community.openai.com/search.rss?q=gpt-5.5"
+        },
+        {
+            "name": "OpenAI Community Hot RSS",
+            "url": "https://community.openai.com/hot.rss"
+        },
+        {
+            "name": "OpenAI API RSS",
+            "url": "https://community.openai.com/c/api/7.rss"
+        },
+        {
+            "name": "OpenAI Codex RSS",
+            "url": "https://community.openai.com/c/codex/62.rss"
+        },
+        {
+            "name": "OpenAI Apps SDK RSS",
+            "url": "https://community.openai.com/c/chatgpt-apps-sdk/152.rss"
+        },
+        {
+            "name": "OpenAI Agent RSS",
+            "url": "https://community.openai.com/tag/agents.rss"
+        },
+        {
+            "name": "OpenAI Agent Search RSS",
+            "url": "https://community.openai.com/search.rss?q=agent"
+        },
+        {
+            "name": "OpenAI MCP RSS",
+            "url": "https://community.openai.com/tag/mcp.rss"
+        },
+        {
+            "name": "OpenAI MCP Search RSS",
+            "url": "https://community.openai.com/search.rss?q=mcp"
+        },
+        {
+            "name": "Hacker News RSS",
+            "url": "https://hnrss.org/frontpage"
+        },
+        {
+            "name": "GitHub Trending AI",
+            "url": "https://github.com/trending?since=daily&spoken_language_code=en"
+        },
+        {
+            "name": "Anthropic News RSS",
+            "url": "https://www.anthropic.com/news/rss.xml"
+        },
+        {
+            "name": "Google AI RSS",
+            "url": "https://blog.google/technology/ai/rss/"
+        },
+        {
+            "name": "Google News",
+            // "url": "https://news.google.com/rss/search?q=enterprise+AI+strategy+Gemini&hl=en-US&gl=US&ceid=US:en"
+            "url": "https://blog.google/innovation-and-ai/technology/ai/rss"
+        },
+        {
+            "name": "HuggingFace News",
+            "url": "https://huggingface.co/blog/feed.xml"
+        },
+        {
+            "name": "Hacker News RSS",
+            "url": "https://hnrss.org/newest"
+        }
+    ],
+    "Tech-Trends": [
+        {
+            "name": "AI Tech",
+            "url": "https://justlovemaki.github.io/CloudFlare-AI-Insight-Daily/rss.xml"
+        },
+        {
+            "name": "Git Repo",
+            "url": "https://wechat2rss.bestblogs.dev/feed/38be32e5376d852c13d3383e4d7a757fd9a55ff6.xml"
+        },
+        {
+            "name": "MIT Technology Review AI",
+            "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed"
+        }
+    ],
+    "Policy-Regulation": [],
+    "Ethics-Governance": [],
+    "Research": [
+        {
+            "name": "Google Research",
+            // "url": "https://news.google.com/rss/search?q=AI+research+benchmark&hl=en-US&gl=US&ceid=US:en"
+            "url": "https://research.google/blog/rss"
+        },
+        {
+            "name": "arXiv cs.AI",
+            "url": "http://export.arxiv.org/rss/cs.AI"
+        }
+    ],
+    "Developer-Forum": [
+        {
+            "name": "Google Developers Blog",
+            "url": "https://developers.googleblog.com/rss"
+        },
+        {
+            "name": "Google Cloud Blog",
+            "url": "https://cloudblog.withgoogle.com/rss/"
+        }
+    ]
+}

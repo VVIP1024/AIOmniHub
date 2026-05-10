@@ -1,11 +1,4 @@
-export type Category =
-  | 'AI Strategy'
-  | 'Tech Trends'
-  | 'Policy & Regulation'
-  | 'Ethics & Governance'
-  | 'Research'
-  | 'Developer Forum'
-  | 'Blog';
+export type Category = string;
 
 export type RssCategory = Exclude<Category, 'Blog'>;
 
@@ -16,6 +9,7 @@ export interface FeedSource {
 
 export interface CategoryInsight {
   category: Category;
+  sourceGroup?: string;
   title: string;
   summary: string;
   link: string;
@@ -27,6 +21,21 @@ export interface CategoryInsight {
 }
 
 export type HomepageInsights = Record<Category, CategoryInsight[]>;
+
+export interface FeedSourceGroup {
+  group?: string;
+  sources: FeedSource[];
+}
+
+export interface SourceNavigationCategory {
+  category: Category;
+  groups: string[];
+}
+
+export interface HomepageData {
+  navigation: SourceNavigationCategory[];
+  insights: HomepageInsights;
+}
 
 export interface BlogPost {
   slug: string;
@@ -130,7 +139,7 @@ export interface ServerDependencies {
     generate(input: AiChatRequest): Promise<AiChatResponse>;
   };
   blog: {
-    getHomepageInsights(): Promise<HomepageInsights>;
+    getHomepageData(): Promise<HomepageData>;
     getPosts(): Promise<BlogPost[]>;
     getPost(slug: string): Promise<BlogPost | null>;
     getAsset(pathname: string): Promise<BlogAsset | null>;
