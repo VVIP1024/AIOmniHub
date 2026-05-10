@@ -244,9 +244,7 @@ function RateLimitedArticleImage({ alt, className, src }: { alt: string; classNa
         <img alt={alt} className={className} loading="lazy" src={activeSrc} />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(33,112,228,0.14),rgba(241,245,249,0.95)_55%,rgba(226,232,240,1))]">
-          <span className="rounded-full border border-slate-300 bg-white/80 px-3 py-1 font-label-sm text-[11px] text-slate-500 shadow-sm">
-            图片排队生成中
-          </span>
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-950" aria-label="图片加载中" />
         </div>
       )}
     </div>
