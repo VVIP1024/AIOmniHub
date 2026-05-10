@@ -186,6 +186,8 @@ export async function getRssHomepageInsights(): Promise<Omit<HomepageInsights, '
       'Policy & Regulation': [],
       'Ethics & Governance': [],
       'Research': [],
+      'Developer Forum': [],
+      'Blog': [],
     };
   }
 

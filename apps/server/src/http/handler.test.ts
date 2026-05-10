@@ -32,7 +32,8 @@ function createDependencies(): ServerDependencies {
         'Policy & Regulation': [],
         'Ethics & Governance': [],
         'Research': [],
-        Blog: [],
+        'Developer Forum': [],
+        'Blog': [],
       }),
       getPosts: async () => [
         {
